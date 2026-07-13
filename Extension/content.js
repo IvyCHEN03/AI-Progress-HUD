@@ -26,20 +26,21 @@
       } catch (_) { return false; }
     }).sort((left, right) => {
       const score = node =>
+        (/^new chat$|^新对话$|^新聊天$/i.test((node.textContent || "").replace(/\s+/g, " ").trim()) ? 16 : 0) +
         (node.getAttribute("aria-current") === "page" ? 8 : 0) +
         (node.closest('nav, aside, [role="navigation"]') ? 4 : 0) +
         (node.getAttribute("data-active") === "true" ? 2 : 0);
       return score(right) - score(left);
     });
     for (const node of exactLinks) {
-      const text = (node.getAttribute("aria-label") || node.textContent || "").replace(/\s+/g, " ").trim();
+      const text = (node.textContent || node.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim();
       if (text && text.length <= 240) return text;
     }
     for (const selector of adapters.title || []) {
       let nodes = [];
       try { nodes = [...document.querySelectorAll(selector)]; } catch (_) { continue; }
       for (const node of nodes) {
-        const text = (node.getAttribute("aria-label") || node.textContent || "").replace(/\s+/g, " ").trim();
+        const text = (node.textContent || node.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim();
         if (text && text.length <= 240) return text;
       }
     }
