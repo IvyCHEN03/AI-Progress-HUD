@@ -19,6 +19,7 @@
 
   function conversationTitle() {
     const currentPath = location.pathname.replace(/\/$/, "") || "/";
+    if (provider === "chatgpt" && currentPath === "/") return "New chat";
     const exactLinks = [...document.querySelectorAll('a[href]')].filter(node => {
       try {
         const url = new URL(node.href, location.href);

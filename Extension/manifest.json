@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Progress HUD Bridge",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "把 AI 标签页的运行状态安全地同步到本机悬浮血条。",
   "permissions": ["storage", "tabs", "alarms", "scripting"],
   "host_permissions": [
