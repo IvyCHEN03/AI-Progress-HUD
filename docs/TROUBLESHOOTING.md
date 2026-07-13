@@ -5,7 +5,7 @@
 Open settings and inspect **Quick setup**:
 
 - **Local bridge unavailable** — quit duplicate copies of the app and relaunch the copy you intend to use.
-- **Browser extension has no heartbeat** — save the pairing token, reload the extension, and refresh supported tabs.
+- **Browser extension is not connected** — save the pairing token and reload the extension. A connected status no longer requires an AI tab to be open; supported tabs begin reporting automatically when opened or refreshed.
 - **Desktop permission missing** — enable the exact running app copy under System Settings → Privacy & Security → Accessibility.
 
 ## The extension says connected but no task appears

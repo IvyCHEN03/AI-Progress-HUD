@@ -45,6 +45,7 @@ final class AppController: NSObject, NSWindowDelegate {
     private func configureBindings() {
         server.onEvent = { [weak store] event in Task { @MainActor in store?.receive(event) } }
         server.onStatus = { [weak store] online in Task { @MainActor in store?.setServerOnline(online) } }
+        server.onBrowserHeartbeat = { [weak store] in Task { @MainActor in store?.markBrowserBridgeSeen() } }
         store.activateBrowserTab = { [weak server] tabId, windowId in server?.enqueueActivate(tabId: tabId, windowId: windowId) }
         store.settingsChanged = { settings in LaunchAtLogin.setEnabled(settings.launchAtLogin) }
         store.onRequestSettings = { [weak self] in self?.openSettings() }

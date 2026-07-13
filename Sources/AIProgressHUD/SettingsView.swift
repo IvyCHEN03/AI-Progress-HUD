@@ -22,7 +22,7 @@ struct SettingsView: View {
                         ProgressView(value: Double(setupCount), total: 3).frame(width: 120)
                     }
                     SetupRow(ok: store.serverOnline, title: "Local bridge", detail: "127.0.0.1:17321")
-                    SetupRow(ok: store.browserReporting, title: "Browser extension", detail: store.browserReporting ? "Receiving tab heartbeats" : "Pair, then refresh AI tabs")
+                    SetupRow(ok: store.browserReporting, title: "Browser extension", detail: store.browserReporting ? "Connected · ready for AI tabs" : "Pair the extension, then reload it")
                     SetupRow(ok: store.accessibilityTrusted, title: "Desktop apps", detail: store.accessibilityTrusted ? "Accessibility granted" : "Permission required for live state")
                     Button(store.demoMode ? "Exit demo mode" : "Preview with demo tasks") {
                         store.toggleDemoMode()
@@ -31,7 +31,7 @@ struct SettingsView: View {
             }
 
             Section("Browser · ChatGPT, Claude, Yuanbao, DeepSeek") {
-                LabeledContent("Status", value: store.browserReporting ? "Live" : "No heartbeat")
+                LabeledContent("Status", value: store.browserReporting ? "Connected" : "Not connected")
                 LabeledContent("Pairing token") {
                     HStack {
                         Text(store.pairingToken).font(.system(.caption, design: .monospaced)).textSelection(.enabled)

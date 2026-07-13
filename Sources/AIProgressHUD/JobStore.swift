@@ -9,6 +9,7 @@ final class JobStore: ObservableObject {
     @Published private(set) var serverOnline = false
     @Published private(set) var accessibilityTrusted = false
     @Published private(set) var browserLastSeenAt: Date?
+    @Published private(set) var browserBridgeLastSeenAt: Date?
     @Published private(set) var codexLastSeenAt: Date?
     @Published private(set) var desktopLastSeenAt: Date?
     @Published var demoMode = false
@@ -48,10 +49,12 @@ final class JobStore: ObservableObject {
 
     func setServerOnline(_ online: Bool) { serverOnline = online }
     func setAccessibilityTrusted(_ trusted: Bool) { accessibilityTrusted = trusted }
+    func markBrowserBridgeSeen() { browserBridgeLastSeenAt = Date() }
 
     var browserReporting: Bool {
-        guard let browserLastSeenAt else { return false }
-        return Date().timeIntervalSince(browserLastSeenAt) < 18
+        let lastSeen = [browserBridgeLastSeenAt, browserLastSeenAt].compactMap { $0 }.max()
+        guard let lastSeen else { return false }
+        return Date().timeIntervalSince(lastSeen) < 35
     }
 
     var codexReporting: Bool {

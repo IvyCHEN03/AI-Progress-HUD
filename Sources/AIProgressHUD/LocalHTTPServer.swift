@@ -10,6 +10,7 @@ final class LocalHTTPServer: @unchecked Sendable {
     private let pairingToken: String
     var onEvent: (@Sendable (BrowserEvent) -> Void)?
     var onStatus: (@Sendable (Bool) -> Void)?
+    var onBrowserHeartbeat: (@Sendable () -> Void)?
 
     init(pairingToken: String) { self.pairingToken = pairingToken }
 
@@ -80,6 +81,7 @@ final class LocalHTTPServer: @unchecked Sendable {
         }
         if request.method == "GET", request.path.hasPrefix("/commands"),
            request.queryValue("token") == pairingToken {
+            onBrowserHeartbeat?()
             lock.lock()
             let pending = commands
             commands.removeAll()
@@ -94,6 +96,7 @@ final class LocalHTTPServer: @unchecked Sendable {
         }
         if request.method == "GET", request.path.hasPrefix("/pair"),
            request.queryValue("token") == pairingToken {
+            onBrowserHeartbeat?()
             respond(connection, body: "{\"ok\":true,\"paired\":true}")
             return
         }
