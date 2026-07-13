@@ -62,10 +62,12 @@ struct SettingsView: View {
             Section("Desktop · ChatGPT, Claude, Yuanbao") {
                 LabeledContent("Accessibility", value: store.accessibilityTrusted ? "Granted" : "Not granted")
                 if !store.accessibilityTrusted {
-                    Button("Request accessibility permission", action: requestAccessibility)
-                    Button("Open System Settings") {
+                    Button("Grant / repair Accessibility permission") {
+                        requestAccessibility()
                         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
                     }
+                    Text("If the switch is already on but status remains Not granted, turn AI Progress HUD off and on once to bind the current app build.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 Text("Only window titles and control labels are inspected. Conversation bodies are never stored.")
                     .font(.caption).foregroundStyle(.secondary)
