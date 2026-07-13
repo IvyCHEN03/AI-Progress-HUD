@@ -18,6 +18,23 @@
   });
 
   function conversationTitle() {
+    const currentPath = location.pathname.replace(/\/$/, "") || "/";
+    const exactLinks = [...document.querySelectorAll('a[href]')].filter(node => {
+      try {
+        const url = new URL(node.href, location.href);
+        return url.origin === location.origin && (url.pathname.replace(/\/$/, "") || "/") === currentPath;
+      } catch (_) { return false; }
+    }).sort((left, right) => {
+      const score = node =>
+        (node.getAttribute("aria-current") === "page" ? 8 : 0) +
+        (node.closest('nav, aside, [role="navigation"]') ? 4 : 0) +
+        (node.getAttribute("data-active") === "true" ? 2 : 0);
+      return score(right) - score(left);
+    });
+    for (const node of exactLinks) {
+      const text = (node.getAttribute("aria-label") || node.textContent || "").replace(/\s+/g, " ").trim();
+      if (text && text.length <= 240) return text;
+    }
     for (const selector of adapters.title || []) {
       let nodes = [];
       try { nodes = [...document.querySelectorAll(selector)]; } catch (_) { continue; }
