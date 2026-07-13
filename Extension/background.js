@@ -22,7 +22,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
         token: pairingToken,
         tabId: sender.tab.id,
         windowId: sender.tab.windowId,
-        pageTitle: sender.tab.title || message.payload.pageTitle
+        pageTitle: message.payload.pageTitle || sender.tab.title
       })
     }).catch(() => {}).finally(pollCommands);
   });
