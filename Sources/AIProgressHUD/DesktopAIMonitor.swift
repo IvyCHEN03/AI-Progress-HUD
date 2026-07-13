@@ -86,6 +86,10 @@ final class DesktopAIMonitor {
     }
 
     private func taskTitle(in window: AXUIElement, fallback: String) -> String {
+        if let selectedTitle = selectedConversationTitle(in: window, depth: 0),
+           selectedTitle.caseInsensitiveCompare(fallback) != .orderedSame {
+            return selectedTitle
+        }
         if let webTitle = firstWebAreaTitle(in: window, depth: 0) {
             let cleaned = webTitle
                 .replacingOccurrences(of: " - Claude", with: "")
@@ -96,6 +100,27 @@ final class DesktopAIMonitor {
             }
         }
         return stringAttribute(window, kAXTitleAttribute).flatMap { $0.isEmpty ? nil : String($0.prefix(72)) } ?? fallback
+    }
+
+    private func selectedConversationTitle(in element: AXUIElement, depth: Int) -> String? {
+        guard depth < 8 else { return nil }
+        let role = stringAttribute(element, kAXRoleAttribute) ?? ""
+        var selectedValue: CFTypeRef?
+        let isSelected = AXUIElementCopyAttributeValue(element, kAXSelectedAttribute as CFString, &selectedValue) == .success
+            && (selectedValue as? Bool == true)
+        if isSelected, ["AXLink", "AXRow", "AXButton", "AXStaticText"].contains(role) {
+            for attribute in [kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute] {
+                if let raw = stringAttribute(element, attribute) {
+                    let value = raw.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !value.isEmpty, value.count <= 240 { return value }
+                }
+            }
+        }
+        for child in children(of: element).prefix(180) {
+            if let found = selectedConversationTitle(in: child, depth: depth + 1) { return found }
+        }
+        return nil
     }
 
     private func firstWebAreaTitle(in element: AXUIElement, depth: Int) -> String? {

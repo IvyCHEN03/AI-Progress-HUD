@@ -15,6 +15,7 @@ assert.deepEqual(Object.keys(adapters).sort(), ["chatgpt", "claude", "deepseek",
 const hosts = new Set();
 for (const [provider, adapter] of Object.entries(adapters)) {
   assert.ok(adapter.hosts.length > 0, `${provider} needs a hostname`);
+  assert.ok(adapter.title.length > 0, `${provider} needs conversation-title selectors`);
   assert.ok(adapter.stop.length > 0, `${provider} needs a stop selector`);
   assert.ok(adapter.send.length > 0, `${provider} needs a send selector`);
   assert.ok(adapter.error.length > 0, `${provider} needs an error selector`);

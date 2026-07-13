@@ -78,7 +78,7 @@ final class JobStore: ObservableObject {
             provider: provider,
             tabId: tabId,
             windowId: event.windowId,
-            pageTitle: event.pageTitle?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? provider.label,
+            pageTitle: provider.conversationTitle(from: event.pageTitle ?? "", fallbackID: String(tabId)),
             state: state,
             startedAt: event.startedAt ?? (state.isRunning ? previous?.startedAt ?? now : previous?.startedAt),
             lastChangedAt: event.lastChangedAt ?? (previous?.state == state ? previous?.lastChangedAt ?? now : now),
@@ -95,7 +95,7 @@ final class JobStore: ObservableObject {
         let id = "codex:\(threadID)"
         let old = jobs.first { $0.id == id }
         upsert(AIJobSnapshot(
-            id: id, provider: .codex, pageTitle: title, state: state,
+            id: id, provider: .codex, pageTitle: AIProvider.codex.conversationTitle(from: title, fallbackID: String(threadID.suffix(6)).uppercased()), state: state,
             startedAt: state.isRunning ? old?.startedAt ?? startedAt ?? now : old?.startedAt ?? startedAt,
             lastChangedAt: old?.state == state ? old?.lastChangedAt ?? lastActivityAt : lastActivityAt,
             lastHeartbeatAt: now, needsAttention: state == .attention,
@@ -113,7 +113,7 @@ final class JobStore: ObservableObject {
         else if detectedState == .idle, old?.state == .completed { state = .completed }
         else { state = detectedState }
         upsert(AIJobSnapshot(
-            id: id, provider: provider, pageTitle: title, state: state,
+            id: id, provider: provider, pageTitle: provider.conversationTitle(from: title), state: state,
             startedAt: state.isRunning ? old?.startedAt ?? now : old?.startedAt,
             lastChangedAt: old?.state == state ? old?.lastChangedAt ?? now : now,
             lastHeartbeatAt: now, needsAttention: state == .attention,

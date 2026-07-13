@@ -17,6 +17,18 @@
     try { return document.querySelector(selector) != null; } catch (_) { return false; }
   });
 
+  function conversationTitle() {
+    for (const selector of adapters.title || []) {
+      let nodes = [];
+      try { nodes = [...document.querySelectorAll(selector)]; } catch (_) { continue; }
+      for (const node of nodes) {
+        const text = (node.getAttribute("aria-label") || node.textContent || "").replace(/\s+/g, " ").trim();
+        if (text && text.length <= 240) return text;
+      }
+    }
+    return document.title;
+  }
+
   function attentionVisible() {
     const controls = [...document.querySelectorAll('button, [role="alert"], [role="dialog"]')].slice(-80);
     return controls.some(node => /captcha|verify|log in|sign in|rate limit|验证码|登录|验证|频率限制|稍后再试/i.test(node.innerText || node.getAttribute("aria-label") || ""));
@@ -38,7 +50,7 @@
       if (state === "completed" || state === "error" || state === "attention") generationExpected = false;
     } else if (!force) return;
     chrome.runtime.sendMessage({ kind: "ai-progress-event", payload: {
-      provider, pageTitle: document.title, state, startedAt,
+      provider, pageTitle: conversationTitle(), state, startedAt,
       lastChangedAt, needsAttention: state === "attention"
     }}).catch(() => {});
   }

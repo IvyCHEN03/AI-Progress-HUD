@@ -151,10 +151,17 @@ private struct JobBar: View {
                             .padding(.horizontal, 4).padding(.vertical, 2)
                             .background(color.opacity(0.12), in: Capsule())
                             .foregroundStyle(color.opacity(0.9))
-                        Text(job.pageTitle).lineLimit(1).font(.system(size: 10)).foregroundStyle(.secondary)
                         Spacer(minLength: 4)
                         Text(job.state.isRunning ? elapsedText : job.state.label)
                             .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(color)
+                    }
+                    HStack(spacing: 5) {
+                        Image(systemName: "bubble.left.and.bubble.right").font(.system(size: 8)).foregroundStyle(.secondary)
+                        Text(job.pageTitle)
+                            .lineLimit(1)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .help(job.pageTitle)
                     }
                     ActivityTrack(color: color, state: job.state)
                 }

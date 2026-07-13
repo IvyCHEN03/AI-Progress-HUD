@@ -40,6 +40,22 @@ enum AIProvider: String, Codable, CaseIterable, Sendable {
         case .deepseek: "鲸"
         }
     }
+
+    func conversationTitle(from rawValue: String, fallbackID: String? = nil) -> String {
+        var value = rawValue
+            .replacingOccurrences(of: "[\\r\\n\\t]+", with: " ", options: .regularExpression)
+            .replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let suffixes = [" - ChatGPT", " — ChatGPT", " | ChatGPT", " - Claude", " — Claude", " | Claude", " - DeepSeek", " — DeepSeek", " | DeepSeek", " - 腾讯元宝", " — 腾讯元宝", " | 腾讯元宝", " - 元宝", " — 元宝", " | 元宝"]
+        for suffix in suffixes where value.range(of: suffix, options: [.caseInsensitive, .anchored, .backwards]) != nil {
+            value.removeLast(suffix.count)
+            value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if value.isEmpty || value.caseInsensitiveCompare(label) == .orderedSame {
+            return fallbackID.map { "\(label) 会话 #\($0)" } ?? "\(label) 新会话"
+        }
+        return String(value.prefix(160))
+    }
 }
 
 struct AIJobSnapshot: Codable, Identifiable, Equatable, Sendable {
