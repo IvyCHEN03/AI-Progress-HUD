@@ -72,6 +72,7 @@ final class DesktopAIMonitor {
         if containsAny(labels, ["thinking", "working", "researching", "思考中", "生成中", "正在研究"]) { return .thinking }
         if containsAny(labels, ["captcha", "verify", "rate limit", "验证码", "需要验证", "频率限制"]) { return .attention }
         if containsAny(labels, ["response error", "generation failed", "网络错误", "生成失败"]) { return .error }
+        if containsAny(labels, ["completed", "task complete", "已完成", "任务完成"]) { return .completed }
         return .idle
     }
 

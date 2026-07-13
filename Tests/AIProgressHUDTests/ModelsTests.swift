@@ -41,7 +41,7 @@ final class ModelsTests: XCTestCase {
         )
         var browser = codex
         browser.source = "browser"
-        XCTAssertEqual(codex.sourceBadge, "TASK 724FD3")
+        XCTAssertEqual(codex.sourceBadge, "")
         XCTAssertEqual(browser.sourceBadge, "WEB")
     }
 }

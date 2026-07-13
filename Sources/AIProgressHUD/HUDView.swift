@@ -146,11 +146,13 @@ private struct JobBar: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 7) {
                         Text(job.provider.label).font(.system(size: 11, weight: .bold))
-                        Text(job.sourceBadge)
-                            .font(.system(size: 8, weight: .bold, design: .monospaced))
-                            .padding(.horizontal, 4).padding(.vertical, 2)
-                            .background(color.opacity(0.12), in: Capsule())
-                            .foregroundStyle(color.opacity(0.9))
+                        if !job.sourceBadge.isEmpty {
+                            Text(job.sourceBadge)
+                                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                .padding(.horizontal, 4).padding(.vertical, 2)
+                                .background(color.opacity(0.12), in: Capsule())
+                                .foregroundStyle(color.opacity(0.9))
+                        }
                         Spacer(minLength: 4)
                         Text(job.state.isRunning ? elapsedText : job.state.label)
                             .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(color)

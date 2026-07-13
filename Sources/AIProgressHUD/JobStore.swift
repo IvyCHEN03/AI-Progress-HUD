@@ -73,6 +73,13 @@ final class JobStore: ObservableObject {
         let now = Date()
         let id = "browser:\(tabId)"
         let previous = jobs.first { $0.id == id }
+        // Idle heartbeats mean that this tab has no active generation. Do not
+        // turn every open ChatGPT home page into a misleading “等待中” row.
+        if state == .idle {
+            if previous?.state == .completed || previous?.state == .attention || previous?.state == .error { return }
+            jobs.removeAll { $0.id == id }
+            return
+        }
         let snapshot = AIJobSnapshot(
             id: id,
             provider: provider,
@@ -108,15 +115,18 @@ final class JobStore: ObservableObject {
         desktopLastSeenAt = now
         let id = "desktop:\(bundleID):\(windowKey)"
         let old = jobs.first { $0.id == id }
-        let state: AIJobState
-        if detectedState == .idle, old?.state.isRunning == true { state = .completed }
-        else if detectedState == .idle, old?.state == .completed { state = .completed }
-        else { state = detectedState }
+        if detectedState == .idle {
+            // Accessibility labels can disappear for a frame while a desktop
+            // answer is still running. Hide unclassified idle windows instead
+            // of falsely promoting them to completed.
+            jobs.removeAll { $0.id == id }
+            return
+        }
         upsert(AIJobSnapshot(
-            id: id, provider: provider, pageTitle: provider.conversationTitle(from: title), state: state,
-            startedAt: state.isRunning ? old?.startedAt ?? now : old?.startedAt,
-            lastChangedAt: old?.state == state ? old?.lastChangedAt ?? now : now,
-            lastHeartbeatAt: now, needsAttention: state == .attention,
+            id: id, provider: provider, pageTitle: provider.conversationTitle(from: title), state: detectedState,
+            startedAt: detectedState.isRunning ? old?.startedAt ?? now : old?.startedAt,
+            lastChangedAt: old?.state == detectedState ? old?.lastChangedAt ?? now : now,
+            lastHeartbeatAt: now, needsAttention: detectedState == .attention,
             source: "desktop:\(bundleID)"
         ))
     }
@@ -151,9 +161,8 @@ final class JobStore: ObservableObject {
             let bundleID = String(job.source.dropFirst("desktop:".count))
             NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.activate()
         }
-        if let index = jobs.firstIndex(where: { $0.id == job.id }), jobs[index].state == .completed {
-            jobs[index].state = .idle
-            jobs[index].needsAttention = false
+        if job.state == .completed {
+            jobs.removeAll { $0.id == job.id }
         }
     }
 

@@ -57,7 +57,12 @@
     if (attentionVisible()) return "attention";
     if (exists(adapters.error)) return "error";
     if (exists(adapters.stop)) return Date.now() - lastMutationAt < 1400 ? "streaming" : "thinking";
-    if (generationExpected && state !== "completed") return "completed";
+    if (generationExpected) {
+      // A missing stop button is not enough to declare completion: some providers
+      // hide it briefly while the answer is still streaming. Wait for a quiet DOM.
+      if (Date.now() - lastMutationAt < 2600) return "streaming";
+      return "completed";
+    }
     return state === "completed" ? "completed" : "idle";
   }
 

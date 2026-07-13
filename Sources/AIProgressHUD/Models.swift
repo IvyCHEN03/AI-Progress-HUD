@@ -84,8 +84,7 @@ struct AIJobSnapshot: Codable, Identifiable, Equatable, Sendable {
     var sourceBadge: String {
         if source == "demo:web" { return "WEB" }
         if source == "demo:app" { return "APP" }
-        if source == "demo:codex" { return "TASK \(shortID)" }
-        if source == "codex" { return "TASK \(shortID)" }
+        if source == "demo:codex" || source == "codex" { return "" }
         if source == "browser" { return "WEB" }
         if source.hasPrefix("desktop:") { return "APP" }
         return "LOCAL"
