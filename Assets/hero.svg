@@ -1,0 +1,68 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="80" y1="20" x2="1120" y2="610" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07131F"/><stop offset="0.52" stop-color="#0B1825"/><stop offset="1" stop-color="#071018"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#13B8C8"/><stop offset="0.5" stop-color="#6FF7FF"/><stop offset="1" stop-color="#13B8C8"/></linearGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6D45D8"/><stop offset="0.5" stop-color="#C8A8FF"/><stop offset="1" stop-color="#6D45D8"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="28" flood-color="#000" flood-opacity=".48"/></filter>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1200" height="630" rx="34" fill="url(#bg)"/>
+  <circle cx="1050" cy="78" r="260" fill="#11D6E8" opacity=".055"/>
+  <circle cx="80" cy="580" r="280" fill="#8B5CF6" opacity=".05"/>
+
+  <g transform="translate(76 96)">
+    <text x="0" y="54" fill="#F4FAFF" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="54" font-weight="760">One glance.</text>
+    <text x="0" y="116" fill="#6FEFF7" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="54" font-weight="760">Every AI task.</text>
+    <text x="0" y="164" fill="#92A8BA" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="21">A local, task-aware progress HUD for macOS.</text>
+    <g transform="translate(0 210)">
+      <rect width="136" height="36" rx="18" fill="#102C35" stroke="#1C6470"/><text x="68" y="24" text-anchor="middle" fill="#71F1F8" font-family="-apple-system,sans-serif" font-size="14" font-weight="650">100% LOCAL</text>
+      <rect x="148" width="146" height="36" rx="18" fill="#171E2A" stroke="#344052"/><text x="221" y="24" text-anchor="middle" fill="#C8D5DF" font-family="-apple-system,sans-serif" font-size="14" font-weight="650">NO TELEMETRY</text>
+    </g>
+    <text x="0" y="320" fill="#7E95A8" font-family="-apple-system,sans-serif" font-size="17">ChatGPT  ·  Claude  ·  Codex  ·  DeepSeek  ·  Yuanbao</text>
+    <path d="M2 382H130L164 326L208 430L250 350L286 382H394" stroke="#42E6EF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".9" filter="url(#glow)"/>
+  </g>
+
+  <g transform="translate(580 58)" filter="url(#shadow)">
+    <rect width="544" height="514" rx="28" fill="#101820" fill-opacity=".94" stroke="#2B3D49" stroke-width="2"/>
+    <g transform="translate(26 24)">
+      <circle cx="22" cy="22" r="22" fill="#123D46"/><path d="M8 23H17L22 10L29 34L34 22H42" stroke="#4EEAF4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="58" y="20" fill="#F5FAFD" font-family="-apple-system,sans-serif" font-size="17" font-weight="760" letter-spacing="1.5">AI PROGRESS HUD</text>
+      <text x="58" y="40" fill="#8297A6" font-family="-apple-system,sans-serif" font-size="13">2 running  ·  2 ready</text>
+      <circle cx="440" cy="21" r="5" fill="#37D67A"/><circle cx="458" cy="21" r="5" fill="#4DE5EF"/>
+    </g>
+
+    <g transform="translate(20 88)">
+      <rect width="504" height="84" rx="16" fill="#10232B" stroke="#1C5964"/>
+      <rect x="14" y="14" width="54" height="54" rx="13" fill="#123943"/><text x="41" y="49" text-anchor="middle" fill="#5CECF5" font-family="-apple-system,sans-serif" font-size="20" font-weight="700">◉</text>
+      <text x="82" y="31" fill="#ECF7FA" font-family="-apple-system,sans-serif" font-size="15" font-weight="700">ChatGPT</text><rect x="160" y="17" width="42" height="20" rx="10" fill="#173A42"/><text x="181" y="31" text-anchor="middle" fill="#69EAF2" font-family="monospace" font-size="10" font-weight="700">WEB</text>
+      <text x="82" y="53" fill="#98ACB8" font-family="-apple-system,sans-serif" font-size="13">Market landscape synthesis</text><text x="448" y="31" fill="#5EEBF3" font-family="monospace" font-size="12" font-weight="700">02:18</text>
+      <rect x="82" y="64" width="400" height="6" rx="3" fill="#20323B"/><rect x="186" y="64" width="190" height="6" rx="3" fill="url(#cyan)"/>
+    </g>
+
+    <g transform="translate(20 184)">
+      <rect width="504" height="84" rx="16" fill="#1A1727" stroke="#44336B"/>
+      <rect x="14" y="14" width="54" height="54" rx="13" fill="#2B2041"/><text x="41" y="49" text-anchor="middle" fill="#C9A7FF" font-family="-apple-system,sans-serif" font-size="21">✦</text>
+      <text x="82" y="31" fill="#F3EEFC" font-family="-apple-system,sans-serif" font-size="15" font-weight="700">Claude</text><rect x="145" y="17" width="42" height="20" rx="10" fill="#302548"/><text x="166" y="31" text-anchor="middle" fill="#D1B7FF" font-family="monospace" font-size="10" font-weight="700">APP</text>
+      <text x="82" y="53" fill="#A99FBB" font-family="-apple-system,sans-serif" font-size="13">Investment memo — world models</text><text x="434" y="31" fill="#C8A8FF" font-family="monospace" font-size="12" font-weight="700">00:47</text>
+      <rect x="82" y="64" width="400" height="6" rx="3" fill="#292437"/><rect x="250" y="64" width="178" height="6" rx="3" fill="url(#purple)"/>
+    </g>
+
+    <g transform="translate(20 280)">
+      <rect width="504" height="84" rx="16" fill="#12251D" stroke="#255A42"/>
+      <rect x="14" y="14" width="54" height="54" rx="13" fill="#173728"/><text x="41" y="48" text-anchor="middle" fill="#69E29C" font-family="-apple-system,sans-serif" font-size="18" font-weight="700">⌘</text>
+      <text x="82" y="31" fill="#EFFBF4" font-family="-apple-system,sans-serif" font-size="15" font-weight="700">Codex</text><rect x="139" y="17" width="86" height="20" rx="10" fill="#1B3D2C"/><text x="182" y="31" text-anchor="middle" fill="#72DDA0" font-family="monospace" font-size="10" font-weight="700">TASK 4FD3</text>
+      <text x="82" y="53" fill="#9AB4A5" font-family="-apple-system,sans-serif" font-size="13">Ship provider adapters and tests</text><text x="421" y="31" fill="#6DDF9C" font-family="-apple-system,sans-serif" font-size="12" font-weight="700">READY</text>
+      <rect x="82" y="64" width="400" height="6" rx="3" fill="#35C775"/>
+    </g>
+
+    <g transform="translate(20 376)">
+      <rect width="504" height="84" rx="16" fill="#171C23" stroke="#303B47"/>
+      <rect x="14" y="14" width="54" height="54" rx="13" fill="#202B35"/><text x="41" y="48" text-anchor="middle" fill="#91D8ED" font-family="-apple-system,sans-serif" font-size="16" font-weight="700">鲸</text>
+      <text x="82" y="31" fill="#F1F6F8" font-family="-apple-system,sans-serif" font-size="15" font-weight="700">DeepSeek</text><rect x="166" y="17" width="42" height="20" rx="10" fill="#25323D"/><text x="187" y="31" text-anchor="middle" fill="#9FD9E9" font-family="monospace" font-size="10" font-weight="700">WEB</text>
+      <text x="82" y="53" fill="#94A4AF" font-family="-apple-system,sans-serif" font-size="13">Comparable transaction research</text><text x="421" y="31" fill="#6DDF9C" font-family="-apple-system,sans-serif" font-size="12" font-weight="700">READY</text>
+      <rect x="82" y="64" width="400" height="6" rx="3" fill="#35C775"/>
+    </g>
+  </g>
+</svg>

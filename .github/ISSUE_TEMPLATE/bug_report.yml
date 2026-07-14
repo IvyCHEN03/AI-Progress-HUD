@@ -1,0 +1,55 @@
+name: Bug report
+description: Report a reproducible native app or bridge problem
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for helping improve AI Progress HUD. Remove prompts, responses, tokens, and private account details from screenshots and logs."
+  - type: input
+    id: version
+    attributes:
+      label: App and extension version
+      placeholder: "App 0.2.0, extension 0.2.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "macOS 15.5, Apple Silicon, Chrome 138"
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Affected source
+      options: [ChatGPT web, ChatGPT desktop, Claude web, Claude desktop, Codex, DeepSeek, Yuanbao, Local bridge, HUD UI, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      placeholder: "1. Launch…\n2. Start…\n3. Observe…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed conversation content, tokens, cookies, and personal information.
+          required: true
