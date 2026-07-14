@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: swift --version
+      - name: Swift tests
+        run: swift test
+      - name: Extension syntax
+        run: |
+          node --check Extension/background.js
+          node --check Extension/content.js
+          node --check Extension/options.js
+          node Extension/tests/adapters.test.js
+      - name: Manifest validation
+        run: |
+          plutil -lint BundleResources/Info.plist
+          python3 -m json.tool Extension/manifest.json >/dev/null
+      - name: Release build
+        run: swift build -c release

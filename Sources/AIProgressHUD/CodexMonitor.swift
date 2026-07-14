@@ -1,0 +1,143 @@
+import AppKit
+import ApplicationServices
+import Foundation
+
+struct CodexThreadRecord: Decodable, Sendable {
+    let id: String
+    let title: String
+    let updatedAt: TimeInterval
+    let lastStreamAt: TimeInterval
+    let streamStartedAt: TimeInterval
+
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case updatedAt = "updated_at"
+        case lastStreamAt = "last_stream_at"
+        case streamStartedAt = "stream_started_at"
+    }
+
+    func state(now: TimeInterval) -> AIJobState {
+        if now - updatedAt <= 12, lastStreamAt == 0 { return .thinking }
+        if now - lastStreamAt <= 9 { return .streaming }
+        if lastStreamAt > 0, now - updatedAt <= 600 { return .completed }
+        return .idle
+    }
+
+    var safeTitle: String {
+        let oneLine = title.replacingOccurrences(of: "[\\r\\n]+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return oneLine.isEmpty ? "Codex 会话 #\(String(id.suffix(6)).uppercased())" : String(oneLine.prefix(160))
+    }
+}
+
+@MainActor
+final class CodexMonitor {
+    private weak var store: JobStore?
+    private var timer: Timer?
+    private var scanInFlight = false
+
+    init(store: JobStore) { self.store = store }
+
+    func start() {
+        scan()
+        timer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.scan() }
+        }
+    }
+
+    func stop() { timer?.invalidate(); timer = nil }
+
+    func requestPermission() {
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+    }
+
+    private func scan() {
+        store?.setAccessibilityTrusted(AXIsProcessTrusted())
+        guard !scanInFlight else { return }
+        scanInFlight = true
+        Task {
+            let records = await Self.loadLocalThreads()
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.scanInFlight = false
+                self.apply(records)
+            }
+        }
+    }
+
+    private func apply(_ records: [CodexThreadRecord]) {
+        let now = Date().timeIntervalSince1970
+        var seen: Set<String> = []
+        for record in records {
+            let state = record.state(now: now)
+            guard state != .idle else { continue }
+            let id = "codex:\(record.id)"
+            seen.insert(id)
+            store?.upsertCodex(
+                threadID: record.id,
+                title: record.safeTitle,
+                state: state,
+                startedAt: Date(timeIntervalSince1970: record.streamStartedAt > 0 ? record.streamStartedAt : record.updatedAt),
+                lastActivityAt: Date(timeIntervalSince1970: max(record.updatedAt, record.lastStreamAt))
+            )
+        }
+        store?.removeMissingCodex(ids: seen)
+    }
+
+    nonisolated private static func loadLocalThreads() async -> [CodexThreadRecord] {
+        await Task.detached(priority: .utility) {
+            let home = FileManager.default.homeDirectoryForCurrentUser
+            let statePath = home.appendingPathComponent(".codex/state_5.sqlite").path
+            let logsPath = home.appendingPathComponent(".codex/logs_2.sqlite").path
+            guard FileManager.default.fileExists(atPath: statePath), FileManager.default.fileExists(atPath: logsPath) else { return [] }
+
+            let escapedLogs = logsPath.replacingOccurrences(of: "'", with: "''")
+            let query = """
+            ATTACH DATABASE 'file:\(escapedLogs)?mode=ro' AS logdb;
+            WITH stream_events AS (
+                SELECT thread_id, ts
+                FROM logdb.logs
+                WHERE target='codex_core::stream_events_utils'
+                  AND ts >= strftime('%s','now')-7200
+            ), stream_gaps AS (
+                SELECT thread_id, ts,
+                       CASE WHEN ts - LAG(ts) OVER (PARTITION BY thread_id ORDER BY ts) > 30 THEN 1 ELSE 0 END AS starts_new
+                FROM stream_events
+            ), stream_groups AS (
+                SELECT thread_id, ts,
+                       SUM(starts_new) OVER (PARTITION BY thread_id ORDER BY ts) AS group_id
+                FROM stream_gaps
+            ), latest_streams AS (
+                SELECT thread_id, MIN(ts) AS stream_started_at, MAX(ts) AS last_stream_at
+                FROM stream_groups g
+                WHERE group_id = (SELECT MAX(g2.group_id) FROM stream_groups g2 WHERE g2.thread_id=g.thread_id)
+                GROUP BY thread_id
+            )
+            SELECT t.id,
+                   substr(replace(replace(t.title, char(10), ' '), char(13), ' '), 1, 160) AS title,
+                   t.updated_at,
+                   COALESCE(s.last_stream_at, 0) AS last_stream_at,
+                   COALESCE(s.stream_started_at, 0) AS stream_started_at
+            FROM threads t
+            LEFT JOIN latest_streams s ON s.thread_id=t.id
+            WHERE t.archived=0 AND t.thread_source='user'
+              AND t.updated_at >= strftime('%s','now')-600
+            ORDER BY t.updated_at DESC LIMIT 20;
+            """
+            let process = Process()
+            let output = Pipe()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/sqlite3")
+            process.arguments = ["-readonly", "-json", statePath, query]
+            process.standardOutput = output
+            process.standardError = Pipe()
+            do {
+                try process.run()
+                process.waitUntilExit()
+                guard process.terminationStatus == 0 else { return [] }
+                let data = output.fileHandleForReading.readDataToEndOfFile()
+                return (try? JSONDecoder().decode([CodexThreadRecord].self, from: data)) ?? []
+            } catch { return [] }
+        }.value
+    }
+}

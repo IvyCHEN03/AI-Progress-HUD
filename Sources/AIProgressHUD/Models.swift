@@ -1,0 +1,113 @@
+import Foundation
+
+enum AIJobState: String, Codable, CaseIterable, Sendable {
+    case idle, thinking, streaming, completed, attention, error, disconnected
+
+    var label: String {
+        switch self {
+        case .idle: "等待中"
+        case .thinking: "思考中"
+        case .streaming: "输出中"
+        case .completed: "已完成"
+        case .attention: "需操作"
+        case .error: "异常"
+        case .disconnected: "失联"
+        }
+    }
+
+    var isRunning: Bool { self == .thinking || self == .streaming }
+}
+
+enum AIProvider: String, Codable, CaseIterable, Sendable {
+    case chatgpt, claude, codex, yuanbao, deepseek
+
+    var label: String {
+        switch self {
+        case .chatgpt: "ChatGPT"
+        case .claude: "Claude"
+        case .codex: "Codex"
+        case .yuanbao: "元宝"
+        case .deepseek: "DeepSeek"
+        }
+    }
+
+    var glyph: String {
+        switch self {
+        case .chatgpt: "◉"
+        case .claude: "✦"
+        case .codex: "⌘"
+        case .yuanbao: "元"
+        case .deepseek: "鲸"
+        }
+    }
+
+    func conversationTitle(from rawValue: String, fallbackID: String? = nil) -> String {
+        var value = rawValue
+            .replacingOccurrences(of: "[\\r\\n\\t]+", with: " ", options: .regularExpression)
+            .replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let suffixes = [" - ChatGPT", " — ChatGPT", " | ChatGPT", " - Claude", " — Claude", " | Claude", " - DeepSeek", " — DeepSeek", " | DeepSeek", " - 腾讯元宝", " — 腾讯元宝", " | 腾讯元宝", " - 元宝", " — 元宝", " | 元宝"]
+        for suffix in suffixes where value.range(of: suffix, options: [.caseInsensitive, .anchored, .backwards]) != nil {
+            value.removeLast(suffix.count)
+            value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if value.isEmpty || value.caseInsensitiveCompare(label) == .orderedSame {
+            return fallbackID.map { "\(label) 会话 #\($0)" } ?? "\(label) 新会话"
+        }
+        return String(value.prefix(160))
+    }
+}
+
+struct AIJobSnapshot: Codable, Identifiable, Equatable, Sendable {
+    var id: String
+    var provider: AIProvider
+    var tabId: Int?
+    var windowId: Int?
+    var pageTitle: String
+    var state: AIJobState
+    var startedAt: Date?
+    var lastChangedAt: Date
+    var lastHeartbeatAt: Date
+    var needsAttention: Bool
+    var source: String
+
+    var elapsed: TimeInterval {
+        guard let startedAt else { return 0 }
+        return max(0, Date().timeIntervalSince(startedAt))
+    }
+
+    var shortID: String {
+        let raw = id.split(separator: ":").last.map(String.init) ?? id
+        return String(raw.suffix(6)).uppercased()
+    }
+
+    var sourceBadge: String {
+        if source == "demo:web" { return "WEB" }
+        if source == "demo:app" { return "APP" }
+        if source == "demo:codex" || source == "codex" { return "" }
+        if source == "browser" { return "WEB" }
+        if source.hasPrefix("desktop:") { return "APP" }
+        return "LOCAL"
+    }
+}
+
+struct BrowserEvent: Codable, Sendable {
+    var type: String?
+    var token: String
+    var provider: AIProvider?
+    var tabId: Int?
+    var windowId: Int?
+    var pageTitle: String?
+    var state: AIJobState?
+    var startedAt: Date?
+    var lastChangedAt: Date?
+    var needsAttention: Bool?
+}
+
+struct HUDSettings: Codable, Equatable {
+    var opacity = 0.94
+    var collapsed = false
+    var launchAtLogin = false
+    var hiddenProviders: Set<AIProvider> = []
+    var collapsedProviders: Set<AIProvider> = []
+}

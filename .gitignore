@@ -1,0 +1,12 @@
+.DS_Store
+.build/
+*.app/
+*.dmg
+*.zip
+*.sha256
+.swiftpm/
+xcuserdata/
+DerivedData/
+dist/
+BundleResources/AIProgressHUD.icns
+BundleResources/AIProgressHUD.iconset/
