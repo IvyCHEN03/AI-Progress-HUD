@@ -17,8 +17,8 @@ struct CodexThreadRecord: Decodable, Sendable {
     }
 
     func state(now: TimeInterval) -> AIJobState {
-        if now - updatedAt <= 12, lastStreamAt == 0 { return .thinking }
-        if now - lastStreamAt <= 9 { return .streaming }
+        if lastStreamAt > 0, now - lastStreamAt <= 20 { return .streaming }
+        if now - updatedAt <= 20 { return .thinking }
         return .idle
     }
 
@@ -65,7 +65,6 @@ final class CodexMonitor {
         var seen: Set<String> = []
         for record in deduplicated(records, now: now) {
             let state = record.state(now: now)
-            guard state != .idle else { continue }
             let id = "codex:\(record.id)"
             seen.insert(id)
             store?.upsertCodex(
@@ -144,7 +143,7 @@ final class CodexMonitor {
             FROM threads t
             LEFT JOIN latest_streams s ON s.thread_id=t.id
             WHERE t.archived=0 AND t.thread_source='user'
-              AND t.updated_at >= strftime('%s','now')-600
+              AND t.updated_at >= strftime('%s','now')-1800
             ORDER BY t.updated_at DESC LIMIT 20;
             """
             let process = Process()
