@@ -6,19 +6,21 @@ struct CodexThreadRecord: Decodable, Sendable {
     let id: String
     let title: String
     let updatedAt: TimeInterval
+    let recencyAt: TimeInterval
     let lastStreamAt: TimeInterval
     let streamStartedAt: TimeInterval
 
     enum CodingKeys: String, CodingKey {
         case id, title
         case updatedAt = "updated_at"
+        case recencyAt = "recency_at"
         case lastStreamAt = "last_stream_at"
         case streamStartedAt = "stream_started_at"
     }
 
     func state(now: TimeInterval) -> AIJobState {
         if lastStreamAt > 0, now - lastStreamAt <= 45 { return .streaming }
-        if now - updatedAt <= 45 { return .thinking }
+        if now - max(updatedAt, recencyAt) <= 240 { return .thinking }
         return .idle
     }
 
@@ -84,10 +86,10 @@ final class CodexMonitor {
         for record in records {
             let key = record.safeTitle.lowercased()
             guard !key.isEmpty else { continue }
-            if let existing = selected[key] {
-                let currentScore = score(record.state(now: now))
-                let existingScore = score(existing.state(now: now))
-                if currentScore < existingScore || (currentScore == existingScore && record.updatedAt > existing.updatedAt) {
+                if let existing = selected[key] {
+                    let currentScore = score(record.state(now: now))
+                    let existingScore = score(existing.state(now: now))
+                if currentScore < existingScore || (currentScore == existingScore && record.sortActivityAt > existing.sortActivityAt) {
                     selected[key] = record
                 }
             } else {
@@ -96,8 +98,8 @@ final class CodexMonitor {
         }
         return selected.values
             .sorted {
-                (score($0.state(now: now)), -max($0.updatedAt, $0.lastStreamAt)) <
-                    (score($1.state(now: now)), -max($1.updatedAt, $1.lastStreamAt))
+                (score($0.state(now: now)), -$0.sortActivityAt) <
+                    (score($1.state(now: now)), -$1.sortActivityAt)
             }
             .prefix(6)
             .map { $0 }
@@ -151,6 +153,7 @@ final class CodexMonitor {
             SELECT t.id,
                    substr(replace(replace(t.title, char(10), ' '), char(13), ' '), 1, 160) AS title,
                    t.updated_at,
+                   t.recency_at,
                    COALESCE(s.last_stream_at, 0) AS last_stream_at,
                    COALESCE(s.stream_started_at, 0) AS stream_started_at
             FROM threads t
@@ -158,6 +161,7 @@ final class CodexMonitor {
             WHERE t.archived=0
               AND t.thread_source IN ('user','subagent')
               AND (t.updated_at >= strftime('%s','now')-300
+                   OR t.recency_at >= strftime('%s','now')-300
                    OR COALESCE(s.last_stream_at, 0) >= strftime('%s','now')-7200)
             ORDER BY t.updated_at DESC LIMIT 20;
             """
@@ -176,4 +180,8 @@ final class CodexMonitor {
             } catch { return [] }
         }.value
     }
+}
+
+private extension CodexThreadRecord {
+    var sortActivityAt: TimeInterval { max(updatedAt, recencyAt, lastStreamAt) }
 }

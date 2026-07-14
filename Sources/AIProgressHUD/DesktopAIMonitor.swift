@@ -67,7 +67,6 @@ final class DesktopAIMonitor {
                         title = target.fallbackName
                         state = .idle
                     }
-                    guard shouldShowDesktopRow(provider: target.provider, state: state) else { continue }
                     seen.insert(id)
                     store?.upsertDesktop(
                         provider: target.provider, bundleID: bundleID,
@@ -77,11 +76,6 @@ final class DesktopAIMonitor {
             }
         }
         store?.removeMissingDesktop(ids: seen)
-    }
-
-    private func shouldShowDesktopRow(provider: AIProvider, state: AIJobState) -> Bool {
-        if provider == .inspiration { return true }
-        return state.isRunning || state == .attention || state == .error
     }
 
     private func priority(_ state: AIJobState) -> Int {

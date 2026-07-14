@@ -5,7 +5,7 @@ enum AIJobState: String, Codable, CaseIterable, Sendable {
 
     var label: String {
         switch self {
-        case .idle: "等待中"
+        case .idle: "待命"
         case .thinking: "思考中"
         case .streaming: "输出中"
         case .completed: "已完成"
