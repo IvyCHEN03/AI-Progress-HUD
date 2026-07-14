@@ -37,7 +37,7 @@ You should not have to cycle through five windows just to learn whether an answe
 |---|:---:|:---:|:---:|:---:|
 | ChatGPT | ✅ Chromium | ✅ macOS | Browser tab / window | ✅ |
 | Claude | ✅ Chromium | ✅ macOS | Browser tab / window | ✅ |
-| Codex | — | ✅ macOS | **Native thread ID + title** | ✅ |
+| Codex | — | ✅ macOS | **Conversation title** | ✅ |
 | DeepSeek | ✅ Chromium | Experimental desktop detection | Browser tab | ✅ |
 | Yuanbao | ✅ Chromium | ✅ macOS | Browser tab / window | ✅ |
 

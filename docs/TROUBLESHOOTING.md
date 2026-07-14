@@ -22,7 +22,7 @@ Open an **Adapter broken** issue. Include provider, browser version, locale, exp
 
 ## Codex shows multiple rows
 
-That is intentional: each parallel Codex thread receives its own task row and short thread ID. Recent completed threads remain visible briefly so results are not missed.
+That is intentional: each parallel Codex conversation receives its own row, labeled by conversation title. Recent completed conversations remain visible briefly so results are not missed.
 
 ## Gatekeeper blocks the downloaded app
 

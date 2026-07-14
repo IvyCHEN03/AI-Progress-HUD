@@ -26,7 +26,7 @@ struct CodexThreadRecord: Decodable, Sendable {
     var safeTitle: String {
         let oneLine = title.replacingOccurrences(of: "[\\r\\n]+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        return oneLine.isEmpty ? "Codex 会话 #\(String(id.suffix(6)).uppercased())" : String(oneLine.prefix(160))
+        return oneLine.isEmpty ? "未命名 Codex 会话" : String(oneLine.prefix(160))
     }
 }
 

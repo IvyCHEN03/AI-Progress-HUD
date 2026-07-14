@@ -52,7 +52,7 @@ enum AIProvider: String, Codable, CaseIterable, Sendable {
             value = value.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         if value.isEmpty || value.caseInsensitiveCompare(label) == .orderedSame {
-            return fallbackID.map { "\(label) 会话 #\($0)" } ?? "\(label) 新会话"
+            return "\(label) 新会话"
         }
         return String(value.prefix(160))
     }

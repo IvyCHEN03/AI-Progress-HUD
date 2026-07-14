@@ -25,6 +25,18 @@ final class ModelsTests: XCTestCase {
         XCTAssertEqual(first.state(now: now), .streaming)
     }
 
+    func testCodexFallbackTitleDoesNotExposeThreadID() {
+        let now = Date().timeIntervalSince1970
+        let record = CodexThreadRecord(id: "thread-111111", title: "", updatedAt: now, lastStreamAt: now, streamStartedAt: now - 5)
+        XCTAssertEqual(record.safeTitle, "未命名 Codex 会话")
+        XCTAssertFalse(record.safeTitle.contains("111111"))
+    }
+
+    func testConversationTitleFallbackDoesNotExposeNumericTaskID() {
+        XCTAssertEqual(AIProvider.codex.conversationTitle(from: "", fallbackID: "ABC123"), "Codex 新会话")
+        XCTAssertEqual(AIProvider.chatgpt.conversationTitle(from: "ChatGPT", fallbackID: "12"), "ChatGPT 新会话")
+    }
+
     func testCodexRecentResponseBecomesCompleted() {
         let now = Date().timeIntervalSince1970
         let record = CodexThreadRecord(id: "thread", title: "任务", updatedAt: now - 20, lastStreamAt: now - 20, streamStartedAt: now - 40)

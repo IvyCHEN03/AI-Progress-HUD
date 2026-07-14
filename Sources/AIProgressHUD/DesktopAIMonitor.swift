@@ -33,21 +33,15 @@ final class DesktopAIMonitor {
 
     private func scan() {
         let trusted = AXIsProcessTrusted()
+        store?.setAccessibilityTrusted(trusted)
         var seen: Set<String> = []
+        guard trusted else {
+            store?.removeMissingDesktop(ids: seen)
+            return
+        }
         for target in targets {
             for bundleID in target.bundleIDs {
                 for app in NSRunningApplication.runningApplications(withBundleIdentifier: bundleID) {
-                    if !trusted {
-                        let key = "app"
-                        let id = "desktop:\(bundleID):\(key)"
-                        seen.insert(id)
-                        store?.upsertDesktop(
-                            provider: target.provider, bundleID: bundleID, windowKey: key,
-                            title: "\(target.fallbackName) 桌面端 · 需授权识别进度",
-                            detectedState: .attention
-                        )
-                        continue
-                    }
                     let appElement = AXUIElementCreateApplication(app.processIdentifier)
                     for (index, window) in windows(of: appElement).enumerated() {
                         let key = String(index)

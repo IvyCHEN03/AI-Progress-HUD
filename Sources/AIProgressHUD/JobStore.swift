@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Foundation
 import SwiftUI
 
@@ -7,7 +8,8 @@ final class JobStore: ObservableObject {
     @Published private(set) var jobs: [AIJobSnapshot] = []
     @Published var settings: HUDSettings { didSet { saveSettings() } }
     @Published private(set) var serverOnline = false
-    @Published private(set) var accessibilityTrusted = false
+    @Published private(set) var accessibilityTrusted = AXIsProcessTrusted()
+    @Published private(set) var accessibilityPreviouslyGranted = UserDefaults.standard.object(forKey: "hud.accessibilityLastGrantedAt") != nil
     @Published private(set) var browserLastSeenAt: Date?
     @Published private(set) var browserBridgeLastSeenAt: Date?
     @Published private(set) var codexLastSeenAt: Date?
@@ -48,7 +50,14 @@ final class JobStore: ObservableObject {
     }
 
     func setServerOnline(_ online: Bool) { serverOnline = online }
-    func setAccessibilityTrusted(_ trusted: Bool) { accessibilityTrusted = trusted }
+
+    func setAccessibilityTrusted(_ trusted: Bool) {
+        accessibilityTrusted = trusted
+        if trusted {
+            accessibilityPreviouslyGranted = true
+            UserDefaults.standard.set(Date(), forKey: "hud.accessibilityLastGrantedAt")
+        }
+    }
     func markBrowserBridgeSeen() { browserBridgeLastSeenAt = Date() }
 
     var browserReporting: Bool {

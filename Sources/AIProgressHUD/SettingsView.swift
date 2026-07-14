@@ -9,6 +9,12 @@ struct SettingsView: View {
         [store.serverOnline, store.browserReporting, store.accessibilityTrusted].filter { $0 }.count
     }
 
+    private var desktopDetail: String {
+        if store.accessibilityTrusted { return "Accessibility granted" }
+        if store.accessibilityPreviouslyGranted { return "Granted before · relaunch or repair only if desktop apps are missing" }
+        return "Enable once for desktop app state"
+    }
+
     var body: some View {
         Form {
             Section {
@@ -23,7 +29,7 @@ struct SettingsView: View {
                     }
                     SetupRow(ok: store.serverOnline, title: "Local bridge", detail: "127.0.0.1:17321")
                     SetupRow(ok: store.browserReporting, title: "Browser extension", detail: store.browserReporting ? "Connected · ready for AI tabs" : "Pair the extension, then reload it")
-                    SetupRow(ok: store.accessibilityTrusted, title: "Desktop apps", detail: store.accessibilityTrusted ? "Accessibility granted" : "Permission required for live state")
+                    SetupRow(ok: store.accessibilityTrusted, title: "Desktop apps", detail: desktopDetail)
                     Button(store.demoMode ? "Exit demo mode" : "Preview with demo tasks") {
                         store.toggleDemoMode()
                     }
@@ -60,13 +66,20 @@ struct SettingsView: View {
             }
 
             Section("Desktop · ChatGPT, Claude, Yuanbao") {
-                LabeledContent("Accessibility", value: store.accessibilityTrusted ? "Granted" : "Not granted")
-                if !store.accessibilityTrusted {
+                LabeledContent("Accessibility", value: store.accessibilityTrusted ? "Granted" : (store.accessibilityPreviouslyGranted ? "Previously granted" : "Not granted"))
+                if !store.accessibilityTrusted && !store.accessibilityPreviouslyGranted {
                     Button("Grant / repair Accessibility permission") {
                         requestAccessibility()
                         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
                     }
-                    Text("If the switch is already on but status remains Not granted, turn AI Progress HUD off and on once to bind the current app build.")
+                    Text("Grant once for desktop app windows. Browser tabs and Codex local tasks work without this permission.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else if !store.accessibilityTrusted {
+                    Button("Repair Accessibility permission") {
+                        requestAccessibility()
+                        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                    }
+                    Text("This Mac has granted AI Progress HUD before. If desktop app rows disappear after rebuilding or moving the app, toggle the existing Accessibility entry off and on once.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Text("Only window titles and control labels are inspected. Conversation bodies are never stored.")
@@ -75,7 +88,7 @@ struct SettingsView: View {
 
             Section("Codex") {
                 LabeledContent("Thread sync", value: store.codexReporting ? "Live" : "Waiting for activity")
-                Text("Parallel Codex threads are separated by thread ID and shown as individual tasks. No Accessibility permission is required.")
+                Text("Codex rows use the conversation title only. No Accessibility permission is required.")
                     .font(.caption).foregroundStyle(.secondary)
             }
 
