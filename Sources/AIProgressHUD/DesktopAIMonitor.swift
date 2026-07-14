@@ -14,7 +14,8 @@ final class DesktopAIMonitor {
         Target(provider: .chatgpt, bundleIDs: ["com.openai.codex", "com.openai.chat"], fallbackName: "ChatGPT"),
         Target(provider: .claude, bundleIDs: ["com.anthropic.claudefordesktop"], fallbackName: "Claude"),
         Target(provider: .yuanbao, bundleIDs: ["com.tencent.yuanbao"], fallbackName: "元宝"),
-        Target(provider: .deepseek, bundleIDs: ["com.deepseek.chat", "com.deepseek.DeepSeek"], fallbackName: "DeepSeek")
+        Target(provider: .deepseek, bundleIDs: ["com.deepseek.chat", "com.deepseek.DeepSeek"], fallbackName: "DeepSeek"),
+        Target(provider: .inspiration, bundleIDs: ["com.local.clipboard-station"], fallbackName: "灵感悬浮球")
     ]
 
     private weak var store: JobStore?
@@ -42,8 +43,8 @@ final class DesktopAIMonitor {
                     let key = "\(app.processIdentifier)"
                     let id = "desktop:\(bundleID):\(key)"
                     seen.insert(id)
-                    let title: String
-                    let state: AIJobState
+                    var title: String
+                    var state: AIJobState
                     let fallback = app.localizedName ?? target.fallbackName
                     if !trusted {
                         title = fallback
@@ -55,13 +56,17 @@ final class DesktopAIMonitor {
                             title = fallback
                             state = .idle
                         } else {
-                        let snapshots = windows.map { window in
-                            let labels = controlLabels(in: window, depth: 0).lowercased()
-                            return (title: taskTitle(in: window, fallback: fallback), state: detectState(from: labels))
+                            let snapshots = windows.map { window in
+                                let labels = controlLabels(in: window, depth: 0).lowercased()
+                                return (title: taskTitle(in: window, fallback: fallback), state: detectState(from: labels))
+                            }
+                            title = snapshots.first { !$0.title.isEmpty && $0.title != fallback }?.title ?? fallback
+                            state = snapshots.map(\.state).min(by: { priority($0) < priority($1) }) ?? .idle
                         }
-                        title = snapshots.first { !$0.title.isEmpty && $0.title != fallback }?.title ?? fallback
-                        state = snapshots.map(\.state).min(by: { priority($0) < priority($1) }) ?? .idle
-                        }
+                    }
+                    if target.provider == .inspiration {
+                        title = target.fallbackName
+                        state = .idle
                     }
                     store?.upsertDesktop(
                         provider: target.provider, bundleID: bundleID,
