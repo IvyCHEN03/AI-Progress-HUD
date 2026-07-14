@@ -14,8 +14,7 @@ final class DesktopAIMonitor {
         Target(provider: .chatgpt, bundleIDs: ["com.openai.codex", "com.openai.chat"], fallbackName: "ChatGPT"),
         Target(provider: .claude, bundleIDs: ["com.anthropic.claudefordesktop"], fallbackName: "Claude"),
         Target(provider: .yuanbao, bundleIDs: ["com.tencent.yuanbao"], fallbackName: "元宝"),
-        Target(provider: .deepseek, bundleIDs: ["com.deepseek.chat", "com.deepseek.DeepSeek"], fallbackName: "DeepSeek"),
-        Target(provider: .inspiration, bundleIDs: ["com.local.clipboard-station"], fallbackName: "灵感悬浮球")
+        Target(provider: .deepseek, bundleIDs: ["com.deepseek.chat", "com.deepseek.DeepSeek"], fallbackName: "DeepSeek")
     ]
 
     private weak var store: JobStore?
