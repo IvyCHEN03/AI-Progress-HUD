@@ -42,7 +42,6 @@ final class DesktopAIMonitor {
                     if app.bundleURL?.path.hasPrefix("/Volumes/") == true { continue }
                     let key = "\(app.processIdentifier)"
                     let id = "desktop:\(bundleID):\(key)"
-                    seen.insert(id)
                     var title: String
                     var state: AIJobState
                     let fallback = app.localizedName ?? target.fallbackName
@@ -68,6 +67,8 @@ final class DesktopAIMonitor {
                         title = target.fallbackName
                         state = .idle
                     }
+                    guard shouldShowDesktopRow(provider: target.provider, state: state) else { continue }
+                    seen.insert(id)
                     store?.upsertDesktop(
                         provider: target.provider, bundleID: bundleID,
                         windowKey: key, title: title, detectedState: state
@@ -76,6 +77,11 @@ final class DesktopAIMonitor {
             }
         }
         store?.removeMissingDesktop(ids: seen)
+    }
+
+    private func shouldShowDesktopRow(provider: AIProvider, state: AIJobState) -> Bool {
+        if provider == .inspiration { return true }
+        return state.isRunning || state == .attention || state == .error
     }
 
     private func priority(_ state: AIJobState) -> Int {

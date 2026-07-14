@@ -65,6 +65,7 @@ final class CodexMonitor {
         var seen: Set<String> = []
         for record in deduplicated(records, now: now) {
             let state = record.state(now: now)
+            guard state.isRunning || state == .attention || state == .error else { continue }
             let id = "codex:\(record.id)"
             seen.insert(id)
             store?.upsertCodex(
@@ -93,7 +94,13 @@ final class CodexMonitor {
                 selected[key] = record
             }
         }
-        return selected.values.sorted { $0.updatedAt > $1.updatedAt }
+        return selected.values
+            .sorted {
+                (score($0.state(now: now)), -max($0.updatedAt, $0.lastStreamAt)) <
+                    (score($1.state(now: now)), -max($1.updatedAt, $1.lastStreamAt))
+            }
+            .prefix(6)
+            .map { $0 }
     }
 
     private func score(_ state: AIJobState) -> Int {
@@ -150,7 +157,7 @@ final class CodexMonitor {
             LEFT JOIN latest_streams s ON s.thread_id=t.id
             WHERE t.archived=0
               AND t.thread_source IN ('user','subagent')
-              AND (t.updated_at >= strftime('%s','now')-1800
+              AND (t.updated_at >= strftime('%s','now')-300
                    OR COALESCE(s.last_stream_at, 0) >= strftime('%s','now')-7200)
             ORDER BY t.updated_at DESC LIMIT 20;
             """
