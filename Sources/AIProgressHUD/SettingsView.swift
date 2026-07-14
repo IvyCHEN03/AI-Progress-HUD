@@ -5,6 +5,7 @@ struct SettingsView: View {
     @ObservedObject var store: JobStore
     let runningAppPath: String
     let requestAccessibility: () -> Void
+    let resetAccessibilityBinding: () -> Void
 
     private var setupCount: Int {
         [store.serverOnline, store.browserReporting, store.accessibilityTrusted].filter { $0 }.count
@@ -69,16 +70,26 @@ struct SettingsView: View {
             Section("Desktop · ChatGPT, Claude, Yuanbao") {
                 LabeledContent("Accessibility", value: store.accessibilityTrusted ? "Granted" : (store.accessibilityPreviouslyGranted ? "Previously granted" : "Not granted"))
                 if !store.accessibilityTrusted && !store.accessibilityPreviouslyGranted {
-                    Button("Grant / repair Accessibility permission") {
-                        requestAccessibility()
-                        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                    HStack {
+                        Button("Grant Accessibility permission") {
+                            requestAccessibility()
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                        }
+                        Button("Reset permission binding") {
+                            resetAccessibilityBinding()
+                        }
                     }
                     Text("Grant once for desktop app windows. Browser tabs and Codex local tasks work without this permission.")
                         .font(.caption).foregroundStyle(.secondary)
                 } else if !store.accessibilityTrusted {
-                    Button("Repair Accessibility permission") {
-                        requestAccessibility()
-                        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                    HStack {
+                        Button("Repair Accessibility permission") {
+                            requestAccessibility()
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+                        }
+                        Button("Reset permission binding") {
+                            resetAccessibilityBinding()
+                        }
                     }
                     Text("This Mac has granted AI Progress HUD before, but macOS is not trusting the currently running copy. Keep one app copy, then toggle this exact app off and on once in Accessibility.")
                         .font(.caption).foregroundStyle(.secondary)

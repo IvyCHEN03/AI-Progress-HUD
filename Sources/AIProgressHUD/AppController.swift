@@ -131,6 +131,8 @@ final class AppController: NSObject, NSWindowDelegate {
                 runningAppPath: Bundle.main.bundleURL.path
             ) { [weak self] in
                 self?.requestAccessibilityPermission()
+            } resetAccessibilityBinding: { [weak self] in
+                self?.resetAccessibilityBinding()
             }
             let window = NSWindow(contentViewController: NSHostingController(rootView: view))
             window.title = "AI Progress HUD 设置"
@@ -147,6 +149,16 @@ final class AppController: NSObject, NSWindowDelegate {
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
         refreshAccessibilityStatus()
+    }
+
+    private func resetAccessibilityBinding() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+        task.arguments = ["reset", "Accessibility", Bundle.main.bundleIdentifier ?? "com.local.ai-progress-hud"]
+        try? task.run()
+        task.waitUntilExit()
+        requestAccessibilityPermission()
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
     }
 
     func windowDidEndLiveResize(_ notification: Notification) { snapToEdge() }
