@@ -19,7 +19,7 @@ enum AIJobState: String, Codable, CaseIterable, Sendable {
 }
 
 enum AIProvider: String, Codable, CaseIterable, Sendable {
-    case chatgpt, claude, codex, yuanbao, deepseek
+    case chatgpt, claude, codex, yuanbao, deepseek, inspiration
 
     var label: String {
         switch self {
@@ -28,6 +28,7 @@ enum AIProvider: String, Codable, CaseIterable, Sendable {
         case .codex: "Codex"
         case .yuanbao: "元宝"
         case .deepseek: "DeepSeek"
+        case .inspiration: "灵感"
         }
     }
 
@@ -38,6 +39,7 @@ enum AIProvider: String, Codable, CaseIterable, Sendable {
         case .codex: "⌘"
         case .yuanbao: "元"
         case .deepseek: "鲸"
+        case .inspiration: "灵"
         }
     }
 

@@ -1,6 +1,7 @@
 const ENDPOINT = "http://127.0.0.1:17321";
 const AI_URLS = [
   "https://chatgpt.com/*",
+  "https://chat.openai.com/*",
   "https://claude.ai/*",
   "https://yuanbao.tencent.com/*",
   "https://chat.deepseek.com/*"

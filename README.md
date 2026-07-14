@@ -40,6 +40,7 @@ You should not have to cycle through five windows just to learn whether an answe
 | Codex | — | ✅ macOS | **Conversation title** | ✅ |
 | DeepSeek | ✅ Chromium | Experimental desktop detection | Browser tab | ✅ |
 | Yuanbao | ✅ Chromium | ✅ macOS | Browser tab / window | ✅ |
+| 灵感悬浮球 | — | ✅ macOS | Desktop window | ✅ |
 
 Web support covers Chrome, Edge, Arc, and other Chromium browsers. Safari is on the roadmap.
 

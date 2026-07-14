@@ -22,7 +22,7 @@ Open an **Adapter broken** issue. Include provider, browser version, locale, exp
 
 ## Codex shows multiple rows
 
-That is intentional: each parallel Codex conversation receives its own row, labeled by conversation title. Recent completed conversations remain visible briefly so results are not missed.
+That is intentional only while multiple Codex conversations are actively running. Rows are labeled by conversation title, and identical titles are deduplicated. Codex history is not used to create synthetic completed rows.
 
 ## Gatekeeper blocks the downloaded app
 

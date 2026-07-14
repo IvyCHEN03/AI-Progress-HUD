@@ -11,10 +11,11 @@ final class DesktopAIMonitor {
     }
 
     private let targets = [
-        Target(provider: .chatgpt, bundleIDs: ["com.openai.chat"], fallbackName: "ChatGPT"),
+        Target(provider: .chatgpt, bundleIDs: ["com.openai.codex", "com.openai.chat"], fallbackName: "ChatGPT"),
         Target(provider: .claude, bundleIDs: ["com.anthropic.claudefordesktop"], fallbackName: "Claude"),
         Target(provider: .yuanbao, bundleIDs: ["com.tencent.yuanbao"], fallbackName: "元宝"),
-        Target(provider: .deepseek, bundleIDs: ["com.deepseek.chat", "com.deepseek.DeepSeek"], fallbackName: "DeepSeek")
+        Target(provider: .deepseek, bundleIDs: ["com.deepseek.chat", "com.deepseek.DeepSeek"], fallbackName: "DeepSeek"),
+        Target(provider: .inspiration, bundleIDs: ["com.local.clipboard-station"], fallbackName: "灵感悬浮球")
     ]
 
     private weak var store: JobStore?
@@ -42,6 +43,7 @@ final class DesktopAIMonitor {
         for target in targets {
             for bundleID in target.bundleIDs {
                 for app in NSRunningApplication.runningApplications(withBundleIdentifier: bundleID) {
+                    if app.bundleURL?.path.hasPrefix("/Volumes/") == true { continue }
                     let appElement = AXUIElementCreateApplication(app.processIdentifier)
                     for (index, window) in windows(of: appElement).enumerated() {
                         let key = String(index)

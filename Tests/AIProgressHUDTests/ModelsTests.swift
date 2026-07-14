@@ -37,10 +37,10 @@ final class ModelsTests: XCTestCase {
         XCTAssertEqual(AIProvider.chatgpt.conversationTitle(from: "ChatGPT", fallbackID: "12"), "ChatGPT 新会话")
     }
 
-    func testCodexRecentResponseBecomesCompleted() {
+    func testCodexRecentResponseDoesNotCreateSyntheticCompletion() {
         let now = Date().timeIntervalSince1970
         let record = CodexThreadRecord(id: "thread", title: "任务", updatedAt: now - 20, lastStreamAt: now - 20, streamStartedAt: now - 40)
-        XCTAssertEqual(record.state(now: now), .completed)
+        XCTAssertEqual(record.state(now: now), .idle)
     }
 
     func testTaskSourceBadgesStayHumanReadable() {

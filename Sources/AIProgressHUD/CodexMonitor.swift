@@ -19,7 +19,6 @@ struct CodexThreadRecord: Decodable, Sendable {
     func state(now: TimeInterval) -> AIJobState {
         if now - updatedAt <= 12, lastStreamAt == 0 { return .thinking }
         if now - lastStreamAt <= 9 { return .streaming }
-        if lastStreamAt > 0, now - updatedAt <= 600 { return .completed }
         return .idle
     }
 
@@ -64,7 +63,7 @@ final class CodexMonitor {
     private func apply(_ records: [CodexThreadRecord]) {
         let now = Date().timeIntervalSince1970
         var seen: Set<String> = []
-        for record in records {
+        for record in deduplicated(records, now: now) {
             let state = record.state(now: now)
             guard state != .idle else { continue }
             let id = "codex:\(record.id)"
@@ -78,6 +77,34 @@ final class CodexMonitor {
             )
         }
         store?.removeMissingCodex(ids: seen)
+    }
+
+    private func deduplicated(_ records: [CodexThreadRecord], now: TimeInterval) -> [CodexThreadRecord] {
+        var selected: [String: CodexThreadRecord] = [:]
+        for record in records {
+            let key = record.safeTitle.lowercased()
+            guard !key.isEmpty else { continue }
+            if let existing = selected[key] {
+                let currentScore = score(record.state(now: now))
+                let existingScore = score(existing.state(now: now))
+                if currentScore < existingScore || (currentScore == existingScore && record.updatedAt > existing.updatedAt) {
+                    selected[key] = record
+                }
+            } else {
+                selected[key] = record
+            }
+        }
+        return selected.values.sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    private func score(_ state: AIJobState) -> Int {
+        switch state {
+        case .streaming: 0
+        case .thinking: 1
+        case .attention, .error: 2
+        case .completed: 3
+        case .idle, .disconnected: 4
+        }
     }
 
     nonisolated private static func loadLocalThreads() async -> [CodexThreadRecord] {

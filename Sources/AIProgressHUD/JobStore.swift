@@ -89,7 +89,7 @@ final class JobStore: ObservableObject {
         // Idle heartbeats mean that this tab has no active generation. Do not
         // turn every open ChatGPT home page into a misleading “等待中” row.
         if state == .idle {
-            if previous?.state == .completed || previous?.state == .attention || previous?.state == .error { return }
+            if previous?.state == .attention || previous?.state == .error { return }
             jobs.removeAll { $0.id == id }
             return
         }
@@ -212,9 +212,13 @@ final class JobStore: ObservableObject {
     }
 
     private func markStaleJobs() {
-        let cutoff = Date().addingTimeInterval(-18)
+        let now = Date()
+        let cutoff = now.addingTimeInterval(-18)
         for index in jobs.indices where jobs[index].source == "browser" && jobs[index].lastHeartbeatAt < cutoff {
             jobs[index].state = .disconnected
+        }
+        jobs.removeAll {
+            $0.state == .completed && now.timeIntervalSince($0.lastChangedAt) > 45
         }
         objectWillChange.send()
     }

@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "AI Progress HUD Bridge",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "把 AI 标签页的运行状态安全地同步到本机悬浮血条。",
   "permissions": ["storage", "tabs", "alarms", "scripting"],
   "host_permissions": [
     "http://127.0.0.1:17321/*",
     "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
     "https://claude.ai/*",
     "https://yuanbao.tencent.com/*",
     "https://chat.deepseek.com/*"
@@ -17,6 +18,7 @@
   "content_scripts": [{
     "matches": [
       "https://chatgpt.com/*",
+      "https://chat.openai.com/*",
       "https://claude.ai/*",
       "https://yuanbao.tencent.com/*",
       "https://chat.deepseek.com/*"
