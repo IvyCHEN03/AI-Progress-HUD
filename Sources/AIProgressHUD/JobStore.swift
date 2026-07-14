@@ -175,7 +175,7 @@ final class JobStore: ObservableObject {
         }
         if let tabId = job.tabId { activateBrowserTab?(tabId, job.windowId) }
         else if job.provider == .codex {
-            NSRunningApplication.runningApplications(withBundleIdentifier: "com.openai.codex").first?.activate()
+            activateCodexTask(title: job.pageTitle)
         } else if job.source.hasPrefix("desktop:") {
             let bundleID = String(job.source.dropFirst("desktop:".count))
             NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.activate()
@@ -236,6 +236,70 @@ final class JobStore: ObservableObject {
     private func saveSettings() {
         if let data = try? JSONEncoder().encode(settings) { UserDefaults.standard.set(data, forKey: "hud.settings") }
         settingsChanged?(settings)
+    }
+
+    private func activateCodexTask(title: String) {
+        guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: "com.openai.codex").first else { return }
+        app.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+        guard accessibilityTrusted else { return }
+        let target = Self.normalizedTaskTitle(title)
+        guard !target.isEmpty else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            let appElement = AXUIElementCreateApplication(app.processIdentifier)
+            if let element = Self.findPressableTask(in: appElement, target: target, depth: 0, nearestPressable: nil) {
+                AXUIElementPerformAction(element, kAXPressAction as CFString)
+            }
+        }
+    }
+
+    private static func findPressableTask(in element: AXUIElement, target: String, depth: Int, nearestPressable: AXUIElement?) -> AXUIElement? {
+        guard depth < 10 else { return nil }
+        let pressable = hasPressAction(element) ? element : nearestPressable
+        let label = normalizedTaskTitle(labelText(for: element))
+        if !label.isEmpty, (label.contains(target) || target.contains(label) || label.hasPrefix(String(target.prefix(18)))) {
+            return pressable ?? element
+        }
+        for child in children(of: element).prefix(260) {
+            if let found = findPressableTask(in: child, target: target, depth: depth + 1, nearestPressable: pressable) {
+                return found
+            }
+        }
+        return nil
+    }
+
+    private static func labelText(for element: AXUIElement) -> String {
+        [kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute, kAXHelpAttribute]
+            .compactMap { stringAttribute(element, $0) }
+            .joined(separator: " ")
+    }
+
+    private static func hasPressAction(_ element: AXUIElement) -> Bool {
+        var actions: CFArray?
+        guard AXUIElementCopyActionNames(element, &actions) == .success else { return false }
+        return (actions as? [String])?.contains(kAXPressAction) == true
+    }
+
+    private static func children(of element: AXUIElement) -> [AXUIElement] {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &value) == .success else { return [] }
+        return value as? [AXUIElement] ?? []
+    }
+
+    private static func stringAttribute(_ element: AXUIElement, _ name: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success else { return nil }
+        return value as? String
+    }
+
+    private static func normalizedTaskTitle(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\[([^\\]]+)\\]\\([^\\)]+\\)", with: "$1", options: .regularExpression)
+            .replacingOccurrences(of: "<image\\b[^>]*>", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "path=\"[^\"]+\"", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "[^\\p{L}\\p{N}\\$\\u4e00-\\u9fff]+", with: " ", options: .regularExpression)
+            .replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
     }
 
     private static func demoJobs(reference now: Date) -> [AIJobSnapshot] {

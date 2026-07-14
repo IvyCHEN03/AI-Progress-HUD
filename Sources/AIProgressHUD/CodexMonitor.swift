@@ -25,9 +25,14 @@ struct CodexThreadRecord: Decodable, Sendable {
     }
 
     var safeTitle: String {
-        let oneLine = title.replacingOccurrences(of: "[\\r\\n]+", with: " ", options: .regularExpression)
+        let oneLine = title
+            .replacingOccurrences(of: "\\[([^\\]]+)\\]\\([^\\)]+\\)", with: "$1", options: .regularExpression)
+            .replacingOccurrences(of: "<image\\b[^>]*>", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "path=\"[^\"]+\"", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "[\\r\\n]+", with: " ", options: .regularExpression)
+            .replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        return oneLine.isEmpty ? "未命名 Codex 会话" : String(oneLine.prefix(160))
+        return oneLine.isEmpty ? "未命名 Codex 会话" : String(oneLine.prefix(96))
     }
 }
 
@@ -159,7 +164,7 @@ final class CodexMonitor {
             FROM threads t
             LEFT JOIN latest_streams s ON s.thread_id=t.id
             WHERE t.archived=0
-              AND t.thread_source IN ('user','subagent')
+              AND t.thread_source='user'
               AND (t.updated_at >= strftime('%s','now')-300
                    OR t.recency_at >= strftime('%s','now')-300
                    OR COALESCE(s.last_stream_at, 0) >= strftime('%s','now')-7200)
