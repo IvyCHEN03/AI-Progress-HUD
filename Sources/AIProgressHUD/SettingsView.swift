@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var store: JobStore
+    let runningAppPath: String
     let requestAccessibility: () -> Void
 
     private var setupCount: Int {
@@ -79,8 +80,24 @@ struct SettingsView: View {
                         requestAccessibility()
                         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
                     }
-                    Text("This Mac has granted AI Progress HUD before. If desktop app rows disappear after rebuilding or moving the app, toggle the existing Accessibility entry off and on once.")
+                    Text("This Mac has granted AI Progress HUD before, but macOS is not trusting the currently running copy. Keep one app copy, then toggle this exact app off and on once in Accessibility.")
                         .font(.caption).foregroundStyle(.secondary)
+                }
+                LabeledContent("Current app") {
+                    HStack {
+                        Text(runningAppPath)
+                            .font(.system(.caption, design: .monospaced))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .textSelection(.enabled)
+                        Button("Reveal") {
+                            NSWorkspace.shared.selectFile(runningAppPath, inFileViewerRootedAtPath: "")
+                        }
+                        Button("Copy") {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(runningAppPath, forType: .string)
+                        }
+                    }
                 }
                 Text("Only window titles and control labels are inspected. Conversation bodies are never stored.")
                     .font(.caption).foregroundStyle(.secondary)

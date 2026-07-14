@@ -58,6 +58,10 @@ final class JobStore: ObservableObject {
             UserDefaults.standard.set(Date(), forKey: "hud.accessibilityLastGrantedAt")
         }
     }
+
+    func refreshAccessibilityStatus() {
+        setAccessibilityTrusted(AXIsProcessTrusted())
+    }
     func markBrowserBridgeSeen() { browserBridgeLastSeenAt = Date() }
 
     var browserReporting: Bool {

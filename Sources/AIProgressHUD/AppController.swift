@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import SwiftUI
 
 final class HUDPanel: NSPanel {
@@ -23,6 +24,7 @@ final class AppController: NSObject, NSWindowDelegate {
         configurePanel()
         configureStatusItem()
         configureBindings()
+        store.refreshAccessibilityStatus()
         DistributedNotificationCenter.default().addObserver(
             self,
             selector: #selector(showFromReopen),
@@ -32,6 +34,12 @@ final class AppController: NSObject, NSWindowDelegate {
         server.start()
         codexMonitor.start()
         desktopMonitor.start()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(refreshAccessibilityStatus),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
         panel.orderFrontRegardless()
     }
 
@@ -39,6 +47,7 @@ final class AppController: NSObject, NSWindowDelegate {
         server.stop()
         codexMonitor.stop()
         desktopMonitor.stop()
+        NotificationCenter.default.removeObserver(self)
         DistributedNotificationCenter.default().removeObserver(self)
     }
 
@@ -49,7 +58,7 @@ final class AppController: NSObject, NSWindowDelegate {
         store.activateBrowserTab = { [weak server] tabId, windowId in server?.enqueueActivate(tabId: tabId, windowId: windowId) }
         store.settingsChanged = { settings in LaunchAtLogin.setEnabled(settings.launchAtLogin) }
         store.onRequestSettings = { [weak self] in self?.openSettings() }
-        store.onRequestQuit = { NSApp.terminate(nil) }
+        store.onRequestQuit = { [weak self] in self?.quitApp(nil) }
     }
 
     private func configurePanel() {
@@ -81,7 +90,7 @@ final class AppController: NSObject, NSWindowDelegate {
         menu.addItem(withTitle: "显示/隐藏血条", action: #selector(togglePanel), keyEquivalent: "")
         menu.addItem(withTitle: "设置…", action: #selector(openSettings), keyEquivalent: ",")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "退出 AI Progress HUD", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: "退出 AI Progress HUD", action: #selector(quitApp(_:)), keyEquivalent: "q")
         for item in menu.items { item.target = self }
         statusItem.menu = menu
     }
@@ -91,12 +100,27 @@ final class AppController: NSObject, NSWindowDelegate {
     }
 
     @objc private func showFromReopen() {
+        refreshAccessibilityStatus()
         panel.orderFrontRegardless()
     }
 
+    @objc private func refreshAccessibilityStatus() {
+        store.refreshAccessibilityStatus()
+    }
+
+    @objc private func quitApp(_ sender: Any?) {
+        NSApp.terminate(sender)
+    }
+
     @objc private func openSettings() {
+        refreshAccessibilityStatus()
         if settingsWindow == nil {
-            let view = SettingsView(store: store) { [weak self] in self?.codexMonitor.requestPermission() }
+            let view = SettingsView(
+                store: store,
+                runningAppPath: Bundle.main.bundleURL.path
+            ) { [weak self] in
+                self?.requestAccessibilityPermission()
+            }
             let window = NSWindow(contentViewController: NSHostingController(rootView: view))
             window.title = "AI Progress HUD 设置"
             window.styleMask = [.titled, .closable, .miniaturizable]
@@ -106,6 +130,12 @@ final class AppController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.center()
         settingsWindow?.makeKeyAndOrderFront(nil)
+    }
+
+    private func requestAccessibilityPermission() {
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+        refreshAccessibilityStatus()
     }
 
     func windowDidEndLiveResize(_ notification: Notification) { snapToEdge() }

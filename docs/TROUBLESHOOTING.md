@@ -14,7 +14,7 @@ Confirm the options page shows version `v0.2` or later. In `chrome://extensions`
 
 ## Accessibility is enabled but desktop apps still say permission required
 
-macOS permissions are tied to a specific app signature. Remove stale copies of AI Progress HUD, remove the old Accessibility entry, add the final app from Applications, and relaunch it. Rebuilding an ad-hoc signed development copy changes its signature and can require permission again.
+macOS permissions are tied to a specific app signature and path. Open AI Progress HUD settings, copy the **Current app** path, and make sure that exact app is enabled in System Settings → Privacy & Security → Accessibility. Remove stale duplicate entries. For repeated local builds, set `AIHUD_CODESIGN_IDENTITY` to a stable Developer ID or local signing certificate before running `make package`; otherwise ad-hoc signing can make macOS treat each rebuilt app as a new accessibility client.
 
 ## A website changed and status is wrong
 

@@ -47,11 +47,6 @@ final class CodexMonitor {
 
     func stop() { timer?.invalidate(); timer = nil }
 
-    func requestPermission() {
-        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
-        _ = AXIsProcessTrustedWithOptions(options)
-    }
-
     private func scan() {
         store?.setAccessibilityTrusted(AXIsProcessTrusted())
         guard !scanInFlight else { return }
