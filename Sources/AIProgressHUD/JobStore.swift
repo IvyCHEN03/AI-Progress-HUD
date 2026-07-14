@@ -86,6 +86,10 @@ final class JobStore: ObservableObject {
         guard let provider = event.provider, let tabId = event.tabId, let state = event.state else { return }
         let now = Date()
         let id = "browser:\(tabId)"
+        if settings.hiddenProviders.contains(provider) {
+            jobs.removeAll { $0.id == id }
+            return
+        }
         let previous = jobs.first { $0.id == id }
         // Idle heartbeats mean that this tab has no active generation. Do not
         // turn every open ChatGPT home page into a misleading “等待中” row.
@@ -114,6 +118,10 @@ final class JobStore: ObservableObject {
         let now = Date()
         codexLastSeenAt = now
         let id = "codex:\(threadID)"
+        if settings.hiddenProviders.contains(.codex) {
+            jobs.removeAll { $0.id == id }
+            return
+        }
         let old = jobs.first { $0.id == id }
         upsert(AIJobSnapshot(
             id: id, provider: .codex, pageTitle: AIProvider.codex.conversationTitle(from: title, fallbackID: String(threadID.suffix(6)).uppercased()), state: state,
@@ -128,6 +136,10 @@ final class JobStore: ObservableObject {
         let now = Date()
         desktopLastSeenAt = now
         let id = "desktop:\(bundleID):\(windowKey)"
+        if settings.hiddenProviders.contains(provider) {
+            jobs.removeAll { $0.id == id }
+            return
+        }
         let old = jobs.first { $0.id == id }
         upsert(AIJobSnapshot(
             id: id, provider: provider, pageTitle: provider.conversationTitle(from: title), state: detectedState,

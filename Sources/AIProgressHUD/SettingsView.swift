@@ -120,18 +120,29 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
+            Section("Detection · 选择要扫描的 AI") {
+                Text("关闭某个来源后，HUD 会停止接收并隐藏对应进度条；重新打开后会在下一次心跳/扫描时恢复。")
+                    .font(.caption).foregroundStyle(.secondary)
+                ForEach(AIProvider.allCases, id: \.self) { provider in
+                    Toggle(isOn: providerEnabledBinding(provider)) {
+                        HStack(spacing: 10) {
+                            Text(provider.glyph)
+                                .frame(width: 24, height: 24)
+                                .background(.quaternary, in: RoundedRectangle(cornerRadius: 7))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(provider.label)
+                                Text(providerKind(provider))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+
             Section("Appearance") {
                 Slider(value: $store.settings.opacity, in: 0.45...1) { Text("Opacity") }
                 Toggle("Launch at login", isOn: $store.settings.launchAtLogin)
-                ForEach(AIProvider.allCases, id: \.self) { provider in
-                    Toggle("Show \(provider.label)", isOn: Binding(
-                        get: { !store.settings.hiddenProviders.contains(provider) },
-                        set: { visible in
-                            if visible { store.settings.hiddenProviders.remove(provider) }
-                            else { store.settings.hiddenProviders.insert(provider) }
-                        }
-                    ))
-                }
             }
 
             Section("Privacy & diagnostics") {
@@ -144,6 +155,27 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .padding(8)
         .frame(width: 560, height: 680)
+    }
+
+    private func providerEnabledBinding(_ provider: AIProvider) -> Binding<Bool> {
+        Binding(
+            get: { !store.settings.hiddenProviders.contains(provider) },
+            set: { enabled in
+                if enabled { store.settings.hiddenProviders.remove(provider) }
+                else { store.settings.hiddenProviders.insert(provider) }
+            }
+        )
+    }
+
+    private func providerKind(_ provider: AIProvider) -> String {
+        switch provider {
+        case .chatgpt, .claude, .yuanbao, .deepseek:
+            "浏览器标签页 + 桌面 App"
+        case .codex:
+            "Codex 本地任务"
+        case .inspiration:
+            "桌面工具"
+        }
     }
 }
 

@@ -17,8 +17,8 @@ struct CodexThreadRecord: Decodable, Sendable {
     }
 
     func state(now: TimeInterval) -> AIJobState {
-        if lastStreamAt > 0, now - lastStreamAt <= 20 { return .streaming }
-        if now - updatedAt <= 20 { return .thinking }
+        if lastStreamAt > 0, now - lastStreamAt <= 45 { return .streaming }
+        if now - updatedAt <= 45 { return .thinking }
         return .idle
     }
 
@@ -119,8 +119,14 @@ final class CodexMonitor {
             WITH stream_events AS (
                 SELECT thread_id, ts
                 FROM logdb.logs
-                WHERE target='codex_core::stream_events_utils'
+                WHERE thread_id IS NOT NULL
                   AND ts >= strftime('%s','now')-7200
+                  AND (
+                      target='codex_core::stream_events_utils'
+                      OR target LIKE 'codex_api::endpoint::responses%'
+                      OR target LIKE 'codex_http_client::%'
+                      OR target='codex_core::responses_retry'
+                  )
             ), stream_gaps AS (
                 SELECT thread_id, ts,
                        CASE WHEN ts - LAG(ts) OVER (PARTITION BY thread_id ORDER BY ts) > 30 THEN 1 ELSE 0 END AS starts_new
@@ -142,8 +148,10 @@ final class CodexMonitor {
                    COALESCE(s.stream_started_at, 0) AS stream_started_at
             FROM threads t
             LEFT JOIN latest_streams s ON s.thread_id=t.id
-            WHERE t.archived=0 AND t.thread_source='user'
-              AND t.updated_at >= strftime('%s','now')-1800
+            WHERE t.archived=0
+              AND t.thread_source IN ('user','subagent')
+              AND (t.updated_at >= strftime('%s','now')-1800
+                   OR COALESCE(s.last_stream_at, 0) >= strftime('%s','now')-7200)
             ORDER BY t.updated_at DESC LIMIT 20;
             """
             let process = Process()
