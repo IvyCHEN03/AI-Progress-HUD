@@ -55,6 +55,9 @@ struct HUDView: View {
             }.buttonStyle(HUDIconButtonStyle())
             Button { store.requestSettings() } label: { Image(systemName: "slider.horizontal.3") }
                 .buttonStyle(HUDIconButtonStyle())
+            Button { store.requestRestart() } label: { Image(systemName: "arrow.clockwise") }
+                .buttonStyle(HUDIconButtonStyle())
+                .help("重启 AI Progress HUD")
             Button { store.requestQuit() } label: { Image(systemName: "xmark") }
                 .buttonStyle(HUDIconButtonStyle())
                 .help("退出 AI Progress HUD")

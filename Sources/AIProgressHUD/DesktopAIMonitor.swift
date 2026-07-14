@@ -36,31 +36,53 @@ final class DesktopAIMonitor {
         let trusted = AXIsProcessTrusted()
         store?.setAccessibilityTrusted(trusted)
         var seen: Set<String> = []
-        guard trusted else {
-            store?.removeMissingDesktop(ids: seen)
-            return
-        }
         for target in targets {
             for bundleID in target.bundleIDs {
                 for app in NSRunningApplication.runningApplications(withBundleIdentifier: bundleID) {
                     if app.bundleURL?.path.hasPrefix("/Volumes/") == true { continue }
-                    let appElement = AXUIElementCreateApplication(app.processIdentifier)
-                    for (index, window) in windows(of: appElement).enumerated() {
-                        let key = String(index)
-                        let id = "desktop:\(bundleID):\(key)"
-                        seen.insert(id)
-                        let labels = controlLabels(in: window, depth: 0).lowercased()
-                        let state = detectState(from: labels)
-                        let title = taskTitle(in: window, fallback: target.fallbackName)
-                        store?.upsertDesktop(
-                            provider: target.provider, bundleID: bundleID,
-                            windowKey: key, title: title, detectedState: state
-                        )
+                    let key = "\(app.processIdentifier)"
+                    let id = "desktop:\(bundleID):\(key)"
+                    seen.insert(id)
+                    let title: String
+                    let state: AIJobState
+                    let fallback = app.localizedName ?? target.fallbackName
+                    if !trusted {
+                        title = fallback
+                        state = .idle
+                    } else {
+                        let appElement = AXUIElementCreateApplication(app.processIdentifier)
+                        let windows = windows(of: appElement)
+                        if windows.isEmpty {
+                            title = fallback
+                            state = .idle
+                        } else {
+                        let snapshots = windows.map { window in
+                            let labels = controlLabels(in: window, depth: 0).lowercased()
+                            return (title: taskTitle(in: window, fallback: fallback), state: detectState(from: labels))
+                        }
+                        title = snapshots.first { !$0.title.isEmpty && $0.title != fallback }?.title ?? fallback
+                        state = snapshots.map(\.state).min(by: { priority($0) < priority($1) }) ?? .idle
+                        }
                     }
+                    store?.upsertDesktop(
+                        provider: target.provider, bundleID: bundleID,
+                        windowKey: key, title: title, detectedState: state
+                    )
                 }
             }
         }
         store?.removeMissingDesktop(ids: seen)
+    }
+
+    private func priority(_ state: AIJobState) -> Int {
+        switch state {
+        case .attention, .error: 0
+        case .streaming: 1
+        case .thinking: 2
+        case .completed: 3
+        case .idle: 4
+        case .disconnected: 5
+        }
     }
 
     private func detectState(from labels: String) -> AIJobState {

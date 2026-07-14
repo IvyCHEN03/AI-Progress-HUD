@@ -24,6 +24,7 @@ final class JobStore: ObservableObject {
     var settingsChanged: ((HUDSettings) -> Void)?
     var onRequestSettings: (() -> Void)?
     var onRequestQuit: (() -> Void)?
+    var onRequestRestart: (() -> Void)?
 
     var presentedJobs: [AIJobSnapshot] {
         demoMode ? Self.demoJobs(reference: demoReference) : jobs
@@ -128,16 +129,9 @@ final class JobStore: ObservableObject {
         desktopLastSeenAt = now
         let id = "desktop:\(bundleID):\(windowKey)"
         let old = jobs.first { $0.id == id }
-        if detectedState == .idle {
-            // Accessibility labels can disappear for a frame while a desktop
-            // answer is still running. Hide unclassified idle windows instead
-            // of falsely promoting them to completed.
-            jobs.removeAll { $0.id == id }
-            return
-        }
         upsert(AIJobSnapshot(
             id: id, provider: provider, pageTitle: provider.conversationTitle(from: title), state: detectedState,
-            startedAt: detectedState.isRunning ? old?.startedAt ?? now : old?.startedAt,
+            startedAt: detectedState.isRunning ? old?.startedAt ?? now : nil,
             lastChangedAt: old?.state == detectedState ? old?.lastChangedAt ?? now : now,
             lastHeartbeatAt: now, needsAttention: detectedState == .attention,
             source: "desktop:\(bundleID)"
@@ -193,6 +187,10 @@ final class JobStore: ObservableObject {
 
     func requestQuit() {
         onRequestQuit?()
+    }
+
+    func requestRestart() {
+        onRequestRestart?()
     }
 
     private func upsert(_ value: AIJobSnapshot) {

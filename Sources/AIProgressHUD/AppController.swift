@@ -59,6 +59,7 @@ final class AppController: NSObject, NSWindowDelegate {
         store.settingsChanged = { settings in LaunchAtLogin.setEnabled(settings.launchAtLogin) }
         store.onRequestSettings = { [weak self] in self?.openSettings() }
         store.onRequestQuit = { [weak self] in self?.quitApp(nil) }
+        store.onRequestRestart = { [weak self] in self?.restartApp(nil) }
     }
 
     private func configurePanel() {
@@ -89,6 +90,7 @@ final class AppController: NSObject, NSWindowDelegate {
         let menu = NSMenu()
         menu.addItem(withTitle: "显示/隐藏血条", action: #selector(togglePanel), keyEquivalent: "")
         menu.addItem(withTitle: "设置…", action: #selector(openSettings), keyEquivalent: ",")
+        menu.addItem(withTitle: "重启 AI Progress HUD", action: #selector(restartApp(_:)), keyEquivalent: "r")
         menu.addItem(.separator())
         menu.addItem(withTitle: "退出 AI Progress HUD", action: #selector(quitApp(_:)), keyEquivalent: "q")
         for item in menu.items { item.target = self }
@@ -109,6 +111,15 @@ final class AppController: NSObject, NSWindowDelegate {
     }
 
     @objc private func quitApp(_ sender: Any?) {
+        NSApp.terminate(sender)
+    }
+
+    @objc private func restartApp(_ sender: Any?) {
+        let appPath = Bundle.main.bundleURL.path.replacingOccurrences(of: "'", with: "'\\''")
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        task.arguments = ["-c", "sleep 0.5; /usr/bin/open '\(appPath)'"]
+        try? task.run()
         NSApp.terminate(sender)
     }
 
@@ -139,7 +150,7 @@ final class AppController: NSObject, NSWindowDelegate {
     }
 
     func windowDidEndLiveResize(_ notification: Notification) { snapToEdge() }
-    func windowDidMove(_ notification: Notification) { NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(snapToEdge), object: nil); perform(#selector(snapToEdge), with: nil, afterDelay: 0.18) }
+    func windowDidMove(_ notification: Notification) { NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(snapToEdge), object: nil); perform(#selector(snapToEdge), with: nil, afterDelay: 0.18); savePanelFrame() }
 
     @objc private func snapToEdge() {
         guard let screen = panel.screen else { return }
@@ -151,13 +162,25 @@ final class AppController: NSObject, NSWindowDelegate {
             frame.origin.x = leftDistance < rightDistance ? visible.minX + 8 : visible.maxX - frame.width - 8
             frame.origin.y = min(max(frame.origin.y, visible.minY + 8), visible.maxY - frame.height - 8)
             panel.setFrame(frame, display: true, animate: true)
+            savePanelFrame()
         }
     }
 
     private func positionAtRightEdge() {
+        if let saved = UserDefaults.standard.string(forKey: "hud.panelFrame") {
+            let frame = NSRectFromString(saved)
+            if frame.width > 100, frame.height > 40 {
+                panel.setFrame(frame, display: true)
+                return
+            }
+        }
         guard let visible = NSScreen.main?.visibleFrame else { return }
         let size = panel.frame.size
         panel.setFrameOrigin(NSPoint(x: visible.maxX - size.width - 18, y: visible.midY - size.height / 2))
+    }
+
+    private func savePanelFrame() {
+        UserDefaults.standard.set(NSStringFromRect(panel.frame), forKey: "hud.panelFrame")
     }
 }
 
