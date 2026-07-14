@@ -28,7 +28,7 @@ body:
     id: expected_state
     attributes:
       label: Expected state
-      options: [Waiting, Thinking, Streaming, Completed, Needs action, Error]
+      options: [Standby, Thinking, Streaming, Completed, Needs action, Error, Disconnected]
     validations:
       required: true
   - type: input

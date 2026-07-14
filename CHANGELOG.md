@@ -2,6 +2,17 @@
 
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) principles.
 
+## Unreleased
+
+### Added
+
+- Full installation guide, support matrix, and FAQ for GitHub visitors and first-time users.
+- Clearer README positioning for the local bridge, provider toggles, and one-click return behavior.
+
+### Changed
+
+- Documentation now uses **Standby / 待命** instead of “Waiting” for idle AI surfaces.
+
 ## 0.3.0 — 2026-07-12
 
 ### Added

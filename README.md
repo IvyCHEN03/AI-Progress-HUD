@@ -13,11 +13,11 @@ Track ChatGPT, Claude, Codex, DeepSeek, and Yuanbao without breaking focus.
 [![Privacy](https://img.shields.io/badge/privacy-100%25_local-22c55e)](SECURITY.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-06b6d4.svg)](LICENSE)
 
-[Download](../../releases/latest) · [Quick start](#quick-start) · [中文](README.zh-CN.md) · [Roadmap](PRODUCT_ROADMAP.md)
+[Download](../../releases/latest) · [Quick start](#quick-start) · [Install guide](docs/INSTALLATION.md) · [中文](README.zh-CN.md) · [Roadmap](PRODUCT_ROADMAP.md)
 
 </div>
 
-AI Progress HUD is a tiny native macOS overlay for people who run several AI tasks at once. It shows **which AI**, **which task**, **what state**, and **how long it has been running**—then takes you back to the right tab or app with one click.
+AI Progress HUD is a tiny native macOS overlay for people who run several AI tasks at once. It shows **which AI**, **which task**, **what state**, and **how long it has been running**—then takes you back to the right tab, app, or Codex task with one click.
 
 Unlike coding-agent-only monitors, it covers everyday AI webpages, desktop clients, and parallel Codex threads in one privacy-first HUD.
 
@@ -31,6 +31,14 @@ You should not have to cycle through five windows just to learn whether an answe
 - **Local by design** — no account, cloud backend, telemetry, prompt capture, or response storage.
 - **Useful beyond coding** — monitor research, writing, analysis, and coding tasks across major AI products.
 
+## What you get
+
+- A always-on-top HUD that can sit at the edge of your screen without stealing focus.
+- Honest state labels: **Standby**, **Thinking**, **Streaming**, **Completed**, **Needs action**, **Error**, or **Disconnected**.
+- Per-provider detection toggles so you can decide exactly which AIs belong in the HUD.
+- One-click return to browser tabs, desktop apps, and best-effort Codex task selection.
+- A local pairing model: browser extension → `127.0.0.1` → native HUD.
+
 ## Supported sources
 
 | Provider | Web | Desktop | Parallel task identity | Click to return |
@@ -43,6 +51,8 @@ You should not have to cycle through five windows just to learn whether an answe
 | 灵感悬浮球 | — | ✅ macOS | Desktop app presence | ✅ |
 
 Web support covers Chrome, Edge, Arc, and other Chromium browsers. Safari is on the roadmap.
+
+For detailed behavior, limitations, and adapter health, see the [support matrix](docs/SUPPORT_MATRIX.md).
 
 ## Quick start
 
@@ -71,15 +81,17 @@ open "AI Progress HUD.app"
 
 ### 3. Enable desktop app detection
 
-Open HUD settings and grant **Accessibility** permission. The app reads window titles and control labels to determine whether a desktop AI is waiting, thinking, streaming, or blocked. It never stores the conversation body.
+Open HUD settings and grant **Accessibility** permission. The app reads window titles and control labels to determine whether a desktop AI is on standby, thinking, streaming, or blocked. It never stores the conversation body.
 
 Codex parallel-thread monitoring uses the local Codex thread index and does not require Accessibility permission.
+
+For a screenshot-by-screenshot setup path, use the full [installation guide](docs/INSTALLATION.md). If something looks wrong, start with [Troubleshooting](docs/TROUBLESHOOTING.md) or the [FAQ](docs/FAQ.md).
 
 ## State model
 
 | State | Meaning |
 |---|---|
-| Waiting | The AI task exists but is idle |
+| Standby | The AI surface exists but is idle |
 | Thinking | The request was accepted and generation has not started streaming |
 | Streaming | Output is actively changing |
 | Completed | A new result is ready to inspect |
@@ -116,6 +128,16 @@ make lint       # extension + plist validation
 make package    # local .app
 make release    # .zip + .dmg + SHA256SUMS
 ```
+
+Project docs:
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Privacy model](docs/PRIVACY.md)
+- [Support matrix](docs/SUPPORT_MATRIX.md)
+- [Installation](docs/INSTALLATION.md)
+- [FAQ](docs/FAQ.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
 
 ## Contributing
 

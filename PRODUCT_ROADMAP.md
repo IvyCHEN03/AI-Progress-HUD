@@ -31,7 +31,7 @@ The durable moat is a community-maintained adapter library paired with a strict 
 - [x] Authenticated localhost bridge and single-instance protection
 - [x] ChatGPT, Claude, DeepSeek, and Yuanbao Chromium adapters
 - [x] ChatGPT, Claude, and Yuanbao desktop detection
-- [x] Parallel Codex threads keyed by thread ID and title
+- [x] Parallel Codex main tasks keyed by title and recent activity, with internal subagent deduplication
 - [x] Actionable connection diagnostics and permission fallback
 - [x] WEB / APP / TASK identity badges and honest elapsed time
 - [x] Double-clickable macOS package with bundled extension
@@ -44,7 +44,7 @@ The durable moat is a community-maintained adapter library paired with a strict 
 - Versioned provider adapters with a visible health/self-test result
 - “Recently completed” inbox retained for 30 minutes
 - Completion deduplication across reconnects and app restarts
-- Direct Codex thread navigation instead of app-only activation
+- More precise Codex thread navigation if a stable public URL scheme becomes available
 - Per-task pin, mute, rename, and project grouping
 - Optional notifications: visual only, macOS notification, or focus-mode digest
 - Menu bar summary such as `2 running · 1 ready`

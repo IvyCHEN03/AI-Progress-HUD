@@ -23,7 +23,7 @@ Accessibility inspection is limited to supported application processes. The moni
 
 ## Codex
 
-Codex support selects thread IDs, titles, update times, and stream-event timestamps from local databases. It does not select message payloads or rollout content.
+Codex support selects thread IDs, titles, recency times, and activity timestamps from local databases. It does not select message payloads or rollout content.
 
 ## Persistence
 
