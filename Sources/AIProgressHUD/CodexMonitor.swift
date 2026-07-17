@@ -179,9 +179,39 @@ final class CodexMonitor {
                 process.waitUntilExit()
                 guard process.terminationStatus == 0 else { return [] }
                 let data = output.fileHandleForReading.readDataToEndOfFile()
-                return (try? JSONDecoder().decode([CodexThreadRecord].self, from: data)) ?? []
+                let records = (try? JSONDecoder().decode([CodexThreadRecord].self, from: data)) ?? []
+                let displayTitles = Self.loadSessionDisplayTitles(from: home.appendingPathComponent(".codex/session_index.jsonl").path)
+                return records.map { record in
+                    guard let title = displayTitles[record.id], !title.isEmpty else { return record }
+                    return CodexThreadRecord(
+                        id: record.id,
+                        title: title,
+                        updatedAt: record.updatedAt,
+                        recencyAt: record.recencyAt,
+                        lastStreamAt: record.lastStreamAt,
+                        streamStartedAt: record.streamStartedAt
+                    )
+                }
             } catch { return [] }
         }.value
+    }
+
+    nonisolated private static func loadSessionDisplayTitles(from path: String) -> [String: String] {
+        guard let data = FileManager.default.contents(atPath: path),
+              let text = String(data: data, encoding: .utf8) else { return [:] }
+        var titles: [String: (name: String, updatedAt: String)] = [:]
+        for line in text.split(separator: "\n") {
+            guard let lineData = line.data(using: .utf8),
+                  let object = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any],
+                  let id = object["id"] as? String,
+                  let name = object["thread_name"] as? String,
+                  let updatedAt = object["updated_at"] as? String else { continue }
+            let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !cleanName.isEmpty else { continue }
+            if let existing = titles[id], existing.updatedAt > updatedAt { continue }
+            titles[id] = (cleanName, updatedAt)
+        }
+        return titles.mapValues(\.name)
     }
 }
 
