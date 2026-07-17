@@ -132,6 +132,7 @@ private struct JobBar: View {
         case .idle: .gray
         case .thinking: .purple
         case .streaming: .cyan
+        case .reconnecting: .orange
         case .completed: .green
         case .attention: .orange
         case .error: .red
@@ -157,7 +158,7 @@ private struct JobBar: View {
                                 .foregroundStyle(color.opacity(0.9))
                         }
                         Spacer(minLength: 4)
-                        Text(job.state.isRunning ? elapsedText : job.state.label)
+                        Text(job.state.showsElapsed ? elapsedText : job.state.label)
                             .font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(color)
                     }
                     HStack(spacing: 5) {

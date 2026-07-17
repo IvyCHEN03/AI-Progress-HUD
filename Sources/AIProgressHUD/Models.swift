@@ -1,13 +1,14 @@
 import Foundation
 
 enum AIJobState: String, Codable, CaseIterable, Sendable {
-    case idle, thinking, streaming, completed, attention, error, disconnected
+    case idle, thinking, streaming, reconnecting, completed, attention, error, disconnected
 
     var label: String {
         switch self {
         case .idle: "待命"
         case .thinking: "思考中"
         case .streaming: "输出中"
+        case .reconnecting: "重连中"
         case .completed: "已完成"
         case .attention: "需操作"
         case .error: "异常"
@@ -15,7 +16,8 @@ enum AIJobState: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    var isRunning: Bool { self == .thinking || self == .streaming }
+    var isRunning: Bool { self == .thinking || self == .streaming || self == .reconnecting }
+    var showsElapsed: Bool { self == .thinking || self == .streaming }
 }
 
 enum AIProvider: String, Codable, CaseIterable, Sendable {

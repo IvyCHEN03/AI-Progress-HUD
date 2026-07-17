@@ -9,6 +9,7 @@ struct CodexThreadRecord: Decodable, Sendable {
     let recencyAt: TimeInterval
     let lastStreamAt: TimeInterval
     let streamStartedAt: TimeInterval
+    let lastRetryAt: TimeInterval
 
     enum CodingKeys: String, CodingKey {
         case id, title
@@ -16,11 +17,13 @@ struct CodexThreadRecord: Decodable, Sendable {
         case recencyAt = "recency_at"
         case lastStreamAt = "last_stream_at"
         case streamStartedAt = "stream_started_at"
+        case lastRetryAt = "last_retry_at"
     }
 
     func state(now: TimeInterval) -> AIJobState {
+        if lastRetryAt > 0, now - lastRetryAt <= 180 { return .reconnecting }
         if lastStreamAt > 0, now - lastStreamAt <= 45 { return .streaming }
-        if now - max(updatedAt, recencyAt) <= 240 { return .thinking }
+        if now - identityActivityAt <= 180 { return .thinking }
         return .idle
     }
 
@@ -79,8 +82,8 @@ final class CodexMonitor {
                 threadID: record.id,
                 title: record.safeTitle,
                 state: state,
-                startedAt: Date(timeIntervalSince1970: record.streamStartedAt > 0 ? record.streamStartedAt : record.updatedAt),
-                lastActivityAt: Date(timeIntervalSince1970: max(record.updatedAt, record.lastStreamAt))
+                startedAt: Date(timeIntervalSince1970: record.streamStartedAt > 0 ? record.streamStartedAt : record.identityActivityAt),
+                lastActivityAt: Date(timeIntervalSince1970: record.sortActivityAt)
             )
         }
         store?.removeMissingCodex(ids: seen)
@@ -113,6 +116,7 @@ final class CodexMonitor {
     private func score(_ state: AIJobState) -> Int {
         switch state {
         case .streaming: 0
+        case .reconnecting: 1
         case .thinking: 1
         case .attention, .error: 2
         case .completed: 3
@@ -139,8 +143,14 @@ final class CodexMonitor {
                       target='codex_core::stream_events_utils'
                       OR target LIKE 'codex_api::endpoint::responses%'
                       OR target LIKE 'codex_http_client::%'
-                      OR target='codex_core::responses_retry'
                   )
+            ), retry_events AS (
+                SELECT thread_id, MAX(ts) AS last_retry_at
+                FROM logdb.logs
+                WHERE thread_id IS NOT NULL
+                  AND ts >= strftime('%s','now')-900
+                  AND target='codex_core::responses_retry'
+                GROUP BY thread_id
             ), stream_gaps AS (
                 SELECT thread_id, ts,
                        CASE WHEN ts - LAG(ts) OVER (PARTITION BY thread_id ORDER BY ts) > 30 THEN 1 ELSE 0 END AS starts_new
@@ -160,15 +170,16 @@ final class CodexMonitor {
                    t.updated_at,
                    t.recency_at,
                    COALESCE(s.last_stream_at, 0) AS last_stream_at,
-                   COALESCE(s.stream_started_at, 0) AS stream_started_at
+                   COALESCE(s.stream_started_at, 0) AS stream_started_at,
+                   COALESCE(r.last_retry_at, 0) AS last_retry_at
             FROM threads t
             LEFT JOIN latest_streams s ON s.thread_id=t.id
+            LEFT JOIN retry_events r ON r.thread_id=t.id
             WHERE t.archived=0
               AND t.thread_source='user'
-              AND (t.updated_at >= strftime('%s','now')-300
-                   OR t.recency_at >= strftime('%s','now')-300
-                   OR COALESCE(s.last_stream_at, 0) >= strftime('%s','now')-7200)
-            ORDER BY t.updated_at DESC LIMIT 20;
+              AND (max(t.updated_at, t.recency_at) >= strftime('%s','now')-180
+                   OR COALESCE(r.last_retry_at, 0) >= strftime('%s','now')-900)
+            ORDER BY max(t.updated_at, t.recency_at, COALESCE(s.last_stream_at, 0), COALESCE(r.last_retry_at, 0)) DESC LIMIT 12;
             """
             let process = Process()
             let output = Pipe()
@@ -181,12 +192,44 @@ final class CodexMonitor {
                 process.waitUntilExit()
                 guard process.terminationStatus == 0 else { return [] }
                 let data = output.fileHandleForReading.readDataToEndOfFile()
-                return (try? JSONDecoder().decode([CodexThreadRecord].self, from: data)) ?? []
+                let records = (try? JSONDecoder().decode([CodexThreadRecord].self, from: data)) ?? []
+                let displayTitles = Self.loadSessionDisplayTitles(from: home.appendingPathComponent(".codex/session_index.jsonl").path)
+                return records.map { record in
+                    guard let title = displayTitles[record.id], !title.isEmpty else { return record }
+                    return CodexThreadRecord(
+                        id: record.id,
+                        title: title,
+                        updatedAt: record.updatedAt,
+                        recencyAt: record.recencyAt,
+                        lastStreamAt: record.lastStreamAt,
+                        streamStartedAt: record.streamStartedAt,
+                        lastRetryAt: record.lastRetryAt
+                    )
+                }
             } catch { return [] }
         }.value
+    }
+
+    nonisolated private static func loadSessionDisplayTitles(from path: String) -> [String: String] {
+        guard let data = FileManager.default.contents(atPath: path),
+              let text = String(data: data, encoding: .utf8) else { return [:] }
+        var titles: [String: (name: String, updatedAt: String)] = [:]
+        for line in text.split(separator: "\n") {
+            guard let lineData = line.data(using: .utf8),
+                  let object = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any],
+                  let id = object["id"] as? String,
+                  let name = object["thread_name"] as? String,
+                  let updatedAt = object["updated_at"] as? String else { continue }
+            let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !cleanName.isEmpty else { continue }
+            if let existing = titles[id], existing.updatedAt > updatedAt { continue }
+            titles[id] = (cleanName, updatedAt)
+        }
+        return titles.mapValues(\.name)
     }
 }
 
 private extension CodexThreadRecord {
-    var sortActivityAt: TimeInterval { max(updatedAt, recencyAt, lastStreamAt) }
+    var identityActivityAt: TimeInterval { max(updatedAt, recencyAt) }
+    var sortActivityAt: TimeInterval { max(identityActivityAt, lastStreamAt, lastRetryAt) }
 }
