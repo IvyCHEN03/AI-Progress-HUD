@@ -175,7 +175,10 @@ final class JobStore: ObservableObject {
         }
         if let tabId = job.tabId { activateBrowserTab?(tabId, job.windowId) }
         else if job.provider == .codex {
-            activateCodexTask(title: job.pageTitle)
+            let threadID = job.id.hasPrefix("codex:")
+                ? String(job.id.dropFirst("codex:".count))
+                : job.id
+            activateCodexTask(threadID: threadID, title: job.pageTitle)
         } else if job.source.hasPrefix("desktop:") {
             let bundleID = String(job.source.dropFirst("desktop:".count))
             NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.activate()
@@ -238,7 +241,14 @@ final class JobStore: ObservableObject {
         settingsChanged?(settings)
     }
 
-    private func activateCodexTask(title: String) {
+    private func activateCodexTask(threadID: String, title: String) {
+        // Codex exposes a stable task deep link. Using the thread ID is both
+        // exact and independent of whether Electron exposes its sidebar to
+        // macOS Accessibility. Keep the title-based AX lookup only as a
+        // compatibility fallback for older builds that reject the URL.
+        if let url = Self.codexTaskURL(threadID: threadID), NSWorkspace.shared.open(url) {
+            return
+        }
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: "com.openai.codex").first else { return }
         app.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
         guard accessibilityTrusted else { return }
@@ -250,6 +260,17 @@ final class JobStore: ObservableObject {
                 AXUIElementPerformAction(element, kAXPressAction as CFString)
             }
         }
+    }
+
+    nonisolated static func codexTaskURL(threadID: String) -> URL? {
+        let cleanID = threadID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanID.isEmpty,
+              cleanID.range(of: "^[A-Za-z0-9-]+$", options: .regularExpression) != nil else { return nil }
+        var components = URLComponents()
+        components.scheme = "codex"
+        components.host = "threads"
+        components.path = "/\(cleanID)"
+        return components.url
     }
 
     private static func findPressableTask(in element: AXUIElement, target: String, depth: Int, nearestPressable: AXUIElement?) -> AXUIElement? {

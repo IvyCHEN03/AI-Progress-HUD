@@ -2,6 +2,12 @@ import XCTest
 @testable import AIProgressHUD
 
 final class ModelsTests: XCTestCase {
+    func testCodexTaskDeepLinkUsesExactThreadID() {
+        let url = JobStore.codexTaskURL(threadID: "019abc12-3456-7890-abcd-ef1234567890")
+        XCTAssertEqual(url?.absoluteString, "codex://threads/019abc12-3456-7890-abcd-ef1234567890")
+        XCTAssertNil(JobStore.codexTaskURL(threadID: "bad/id"))
+    }
+
     func testRunningStates() {
         XCTAssertTrue(AIJobState.thinking.isRunning)
         XCTAssertTrue(AIJobState.streaming.isRunning)
