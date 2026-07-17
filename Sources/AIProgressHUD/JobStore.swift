@@ -214,7 +214,7 @@ final class JobStore: ObservableObject {
     private func priority(_ state: AIJobState) -> Int {
         switch state {
         case .attention, .error: 0
-        case .thinking, .streaming: 1
+        case .thinking, .streaming, .reconnecting: 1
         case .completed: 2
         case .idle: 3
         case .disconnected: 4

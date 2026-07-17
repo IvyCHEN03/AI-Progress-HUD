@@ -82,7 +82,7 @@ final class DesktopAIMonitor {
         switch state {
         case .attention, .error: 0
         case .streaming: 1
-        case .thinking: 2
+        case .thinking, .reconnecting: 2
         case .completed: 3
         case .idle: 4
         case .disconnected: 5

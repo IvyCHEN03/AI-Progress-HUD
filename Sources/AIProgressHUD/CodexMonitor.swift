@@ -9,6 +9,7 @@ struct CodexThreadRecord: Decodable, Sendable {
     let recencyAt: TimeInterval
     let lastStreamAt: TimeInterval
     let streamStartedAt: TimeInterval
+    let lastRetryAt: TimeInterval
 
     enum CodingKeys: String, CodingKey {
         case id, title
@@ -16,9 +17,11 @@ struct CodexThreadRecord: Decodable, Sendable {
         case recencyAt = "recency_at"
         case lastStreamAt = "last_stream_at"
         case streamStartedAt = "stream_started_at"
+        case lastRetryAt = "last_retry_at"
     }
 
     func state(now: TimeInterval) -> AIJobState {
+        if lastRetryAt > 0, now - lastRetryAt <= 180 { return .reconnecting }
         if lastStreamAt > 0, now - lastStreamAt <= 45 { return .streaming }
         if now - identityActivityAt <= 180 { return .thinking }
         return .idle
@@ -113,6 +116,7 @@ final class CodexMonitor {
     private func score(_ state: AIJobState) -> Int {
         switch state {
         case .streaming: 0
+        case .reconnecting: 1
         case .thinking: 1
         case .attention, .error: 2
         case .completed: 3
@@ -139,8 +143,14 @@ final class CodexMonitor {
                       target='codex_core::stream_events_utils'
                       OR target LIKE 'codex_api::endpoint::responses%'
                       OR target LIKE 'codex_http_client::%'
-                      OR target='codex_core::responses_retry'
                   )
+            ), retry_events AS (
+                SELECT thread_id, MAX(ts) AS last_retry_at
+                FROM logdb.logs
+                WHERE thread_id IS NOT NULL
+                  AND ts >= strftime('%s','now')-900
+                  AND target='codex_core::responses_retry'
+                GROUP BY thread_id
             ), stream_gaps AS (
                 SELECT thread_id, ts,
                        CASE WHEN ts - LAG(ts) OVER (PARTITION BY thread_id ORDER BY ts) > 30 THEN 1 ELSE 0 END AS starts_new
@@ -160,13 +170,16 @@ final class CodexMonitor {
                    t.updated_at,
                    t.recency_at,
                    COALESCE(s.last_stream_at, 0) AS last_stream_at,
-                   COALESCE(s.stream_started_at, 0) AS stream_started_at
+                   COALESCE(s.stream_started_at, 0) AS stream_started_at,
+                   COALESCE(r.last_retry_at, 0) AS last_retry_at
             FROM threads t
             LEFT JOIN latest_streams s ON s.thread_id=t.id
+            LEFT JOIN retry_events r ON r.thread_id=t.id
             WHERE t.archived=0
               AND t.thread_source='user'
-              AND max(t.updated_at, t.recency_at) >= strftime('%s','now')-180
-            ORDER BY max(t.updated_at, t.recency_at, COALESCE(s.last_stream_at, 0)) DESC LIMIT 12;
+              AND (max(t.updated_at, t.recency_at) >= strftime('%s','now')-180
+                   OR COALESCE(r.last_retry_at, 0) >= strftime('%s','now')-900)
+            ORDER BY max(t.updated_at, t.recency_at, COALESCE(s.last_stream_at, 0), COALESCE(r.last_retry_at, 0)) DESC LIMIT 12;
             """
             let process = Process()
             let output = Pipe()
@@ -189,7 +202,8 @@ final class CodexMonitor {
                         updatedAt: record.updatedAt,
                         recencyAt: record.recencyAt,
                         lastStreamAt: record.lastStreamAt,
-                        streamStartedAt: record.streamStartedAt
+                        streamStartedAt: record.streamStartedAt,
+                        lastRetryAt: record.lastRetryAt
                     )
                 }
             } catch { return [] }
@@ -217,5 +231,5 @@ final class CodexMonitor {
 
 private extension CodexThreadRecord {
     var identityActivityAt: TimeInterval { max(updatedAt, recencyAt) }
-    var sortActivityAt: TimeInterval { max(identityActivityAt, lastStreamAt) }
+    var sortActivityAt: TimeInterval { max(identityActivityAt, lastStreamAt, lastRetryAt) }
 }

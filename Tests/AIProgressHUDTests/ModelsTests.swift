@@ -5,6 +5,8 @@ final class ModelsTests: XCTestCase {
     func testRunningStates() {
         XCTAssertTrue(AIJobState.thinking.isRunning)
         XCTAssertTrue(AIJobState.streaming.isRunning)
+        XCTAssertTrue(AIJobState.reconnecting.isRunning)
+        XCTAssertFalse(AIJobState.reconnecting.showsElapsed)
         XCTAssertFalse(AIJobState.completed.isRunning)
     }
 
@@ -18,8 +20,8 @@ final class ModelsTests: XCTestCase {
 
     func testCodexThreadsAreSeparatedAndSanitized() {
         let now = Date().timeIntervalSince1970
-        let first = CodexThreadRecord(id: "thread-111111", title: "任务一\n第二行", updatedAt: now, recencyAt: now, lastStreamAt: now, streamStartedAt: now - 5)
-        let second = CodexThreadRecord(id: "thread-222222", title: "任务二", updatedAt: now, recencyAt: now, lastStreamAt: now, streamStartedAt: now - 5)
+        let first = CodexThreadRecord(id: "thread-111111", title: "任务一\n第二行", updatedAt: now, recencyAt: now, lastStreamAt: now, streamStartedAt: now - 5, lastRetryAt: 0)
+        let second = CodexThreadRecord(id: "thread-222222", title: "任务二", updatedAt: now, recencyAt: now, lastStreamAt: now, streamStartedAt: now - 5, lastRetryAt: 0)
         XCTAssertNotEqual(first.id, second.id)
         XCTAssertEqual(first.safeTitle, "任务一 第二行")
         XCTAssertEqual(first.state(now: now), .streaming)
@@ -27,7 +29,7 @@ final class ModelsTests: XCTestCase {
 
     func testCodexFallbackTitleDoesNotExposeThreadID() {
         let now = Date().timeIntervalSince1970
-        let record = CodexThreadRecord(id: "thread-111111", title: "", updatedAt: now, recencyAt: now, lastStreamAt: now, streamStartedAt: now - 5)
+        let record = CodexThreadRecord(id: "thread-111111", title: "", updatedAt: now, recencyAt: now, lastStreamAt: now, streamStartedAt: now - 5, lastRetryAt: 0)
         XCTAssertEqual(record.safeTitle, "未命名 Codex 会话")
         XCTAssertFalse(record.safeTitle.contains("111111"))
     }
@@ -39,19 +41,25 @@ final class ModelsTests: XCTestCase {
 
     func testCodexRecentResponseFallsBackToWaiting() {
         let now = Date().timeIntervalSince1970
-        let record = CodexThreadRecord(id: "thread", title: "任务", updatedAt: now - 20, recencyAt: now - 20, lastStreamAt: now - 20, streamStartedAt: now - 40)
+        let record = CodexThreadRecord(id: "thread", title: "任务", updatedAt: now - 20, recencyAt: now - 20, lastStreamAt: now - 20, streamStartedAt: now - 40, lastRetryAt: 0)
         XCTAssertEqual(record.state(now: now), .streaming)
+    }
+
+    func testCodexRecentRetryShowsReconnecting() {
+        let now = Date().timeIntervalSince1970
+        let record = CodexThreadRecord(id: "thread", title: "任务", updatedAt: now - 600, recencyAt: now - 600, lastStreamAt: 0, streamStartedAt: 0, lastRetryAt: now - 20)
+        XCTAssertEqual(record.state(now: now), .reconnecting)
     }
 
     func testCodexRecentRecencyFallsBackToThinking() {
         let now = Date().timeIntervalSince1970
-        let record = CodexThreadRecord(id: "thread", title: "任务", updatedAt: now - 600, recencyAt: now - 120, lastStreamAt: 0, streamStartedAt: 0)
+        let record = CodexThreadRecord(id: "thread", title: "任务", updatedAt: now - 600, recencyAt: now - 120, lastStreamAt: 0, streamStartedAt: 0, lastRetryAt: 0)
         XCTAssertEqual(record.state(now: now), .thinking)
     }
 
     func testCodexOlderConversationIsIdle() {
         let now = Date().timeIntervalSince1970
-        let record = CodexThreadRecord(id: "thread", title: "任务", updatedAt: now - 600, recencyAt: now - 600, lastStreamAt: 0, streamStartedAt: 0)
+        let record = CodexThreadRecord(id: "thread", title: "任务", updatedAt: now - 600, recencyAt: now - 600, lastStreamAt: 0, streamStartedAt: 0, lastRetryAt: 0)
         XCTAssertEqual(record.state(now: now), .idle)
     }
 
