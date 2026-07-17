@@ -20,7 +20,7 @@ struct CodexThreadRecord: Decodable, Sendable {
 
     func state(now: TimeInterval) -> AIJobState {
         if lastStreamAt > 0, now - lastStreamAt <= 45 { return .streaming }
-        if now - max(updatedAt, recencyAt) <= 240 { return .thinking }
+        if now - identityActivityAt <= 180 { return .thinking }
         return .idle
     }
 
@@ -79,8 +79,8 @@ final class CodexMonitor {
                 threadID: record.id,
                 title: record.safeTitle,
                 state: state,
-                startedAt: Date(timeIntervalSince1970: record.streamStartedAt > 0 ? record.streamStartedAt : record.updatedAt),
-                lastActivityAt: Date(timeIntervalSince1970: max(record.updatedAt, record.lastStreamAt))
+                startedAt: Date(timeIntervalSince1970: record.streamStartedAt > 0 ? record.streamStartedAt : record.identityActivityAt),
+                lastActivityAt: Date(timeIntervalSince1970: record.sortActivityAt)
             )
         }
         store?.removeMissingCodex(ids: seen)
@@ -165,10 +165,8 @@ final class CodexMonitor {
             LEFT JOIN latest_streams s ON s.thread_id=t.id
             WHERE t.archived=0
               AND t.thread_source='user'
-              AND (t.updated_at >= strftime('%s','now')-300
-                   OR t.recency_at >= strftime('%s','now')-300
-                   OR COALESCE(s.last_stream_at, 0) >= strftime('%s','now')-7200)
-            ORDER BY t.updated_at DESC LIMIT 20;
+              AND max(t.updated_at, t.recency_at) >= strftime('%s','now')-180
+            ORDER BY max(t.updated_at, t.recency_at, COALESCE(s.last_stream_at, 0)) DESC LIMIT 12;
             """
             let process = Process()
             let output = Pipe()
@@ -188,5 +186,6 @@ final class CodexMonitor {
 }
 
 private extension CodexThreadRecord {
-    var sortActivityAt: TimeInterval { max(updatedAt, recencyAt, lastStreamAt) }
+    var identityActivityAt: TimeInterval { max(updatedAt, recencyAt) }
+    var sortActivityAt: TimeInterval { max(identityActivityAt, lastStreamAt) }
 }
